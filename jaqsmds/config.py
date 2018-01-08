@@ -1,6 +1,12 @@
 import logging
 
 
+db_map = {
+    "factor": "factor",
+
+}
+
+
 server_config = {
     "frontend": "tcp://0.0.0.0:23000",
     "backend": "tcp://127.0.0.1:23001",

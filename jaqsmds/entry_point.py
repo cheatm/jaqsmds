@@ -1,6 +1,5 @@
 from jaqsmds.server.data_server import start_service
 from jaqsmds.config import server_config
-import logging
 import click
 
 

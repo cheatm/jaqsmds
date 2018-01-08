@@ -1,8 +1,9 @@
 # encoding:utf-8
-from jaqs.data.dataapi.jrpc_py import _unpack_msgpack_snappy, _pack_msgpack_snappy
 from datetime import datetime
-import pymongo
 import logging
+
+from jaqs.data.dataapi.jrpc_py import _unpack_msgpack_snappy, _pack_msgpack_snappy
+import pymongo
 
 
 class Replier(object):
@@ -62,7 +63,7 @@ class DBReplier(RegularReplier):
 
     def __init__(self, host):
         super().__init__()
-        from jaqsmds.server.jset_replier import JsetReplier
+        from jaqsmds.server.repliers.jset_replier import JsetReplier
         self.client = pymongo.MongoClient(host)
         self.jset = JsetReplier(self.client)
         self.methods["jset.query"] = self.handle_jset

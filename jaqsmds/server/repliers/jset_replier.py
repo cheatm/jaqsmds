@@ -1,11 +1,8 @@
 from jaqsmds.collector.table import *
+from jaqsmds.server.repliers.db_replier import MongodbHandler, read
 import logging
 import pandas as pd
-
-
-def read(collection, _filter, projection):
-    projection["_id"] = 0
-    return pd.DataFrame(list(collection.find(_filter, projection)))
+from datetime import datetime
 
 
 def iter_filter(string):
@@ -141,27 +138,81 @@ VIEWS = [
 ]
 
 
-class JsetReplier(object):
+def time_range(start=None, end=None):
+    dct = {}
+    if start:
+        dct['$gte'] = datetime.strptime(start, "%Y-%m-%d").replace(hour=15)
+    if end:
+        dct["$lte"] = datetime.strptime(end, "%Y-%m-%d").replace(hour=15)
+    return dct
+
+
+class Factor(object):
 
     def __init__(self, client):
         self.client = client
+        self.db = self.client["factor"]
+
+    def read(self, _filter, fields):
+        dct = dict(iter_filter(_filter))
+        symbol = dct.pop("symbol")
+        r = time_range(dct.pop('start', None), dct.pop("end", None))
+
+        f = {'datetime': r} if len(r) else None
+        projection = fields2projection(fields)
+        if len(projection):
+            projection['datetime'] = 1
+        projection["_id"] = 0
+
+        data = list(self.iter_read(symbol, f, projection))
+
+        return pd.concat(data)
+
+    def iter_read(self, symbols, _filter, projection):
+        for symbol in symbols.split(","):
+            try:
+                yield self._read(symbol, _filter, projection.copy())
+            except Exception as e:
+                logging.error("factor(symbol=%s, filter=%s, projection=%s) error: %s",
+                              symbol, _filter, projection, e)
+                return pd.DataFrame()
+
+    def _read(self, symbol, _filter, projection):
+        data = pd.DataFrame(list(self.db[symbol].find(_filter, projection)))
+        data["symbol"] = symbol
+        data["datetime"] = data["datetime"].map(self.dt2int)
+        return data
+
+    @staticmethod
+    def dt2int(time):
+        return time.year*10000+time.month*100+time.day
+
+
+class JsetReplier(MongodbHandler):
+
+    def __init__(self, client):
+        super(JsetReplier, self).__init__(client)
         self.views = {table.qs.view: (table, ft) for table, ft in VIEWS}
+        self.factor = Factor(client)
 
     def receive(self, view, filter, fields, **kwargs):
-        try:
-            item = self.views[view]
-            table, analysis = item
-        except KeyError:
-            error_msg = "View: %s not supported" % view
-            raise KeyError(error_msg)
-
-        if isinstance(table, Table2D):
-            db, col = table.db.split(".")
-            data = self.query_2d(self.client[db][col], analysis(filter), fields)
-        elif isinstance(table, Table3D):
-            data = pd.concat(list(self.iter_3d(self.client[table.db], analysis(filter), fields)))
+        if view == "factor":
+            data = self.factor.read(filter, fields)
         else:
-            data = pd.DataFrame()
+            try:
+                item = self.views[view]
+                table, analysis = item
+            except KeyError:
+                error_msg = "View: %s not supported" % view
+                raise KeyError(error_msg)
+
+            if isinstance(table, Table2D):
+                db, col = table.db.split(".")
+                data = self.query_2d(self.client[db][col], analysis(filter), fields)
+            elif isinstance(table, Table3D):
+                data = pd.concat(list(self.iter_3d(self.client[table.db], analysis(filter), fields)))
+            else:
+                data = pd.DataFrame()
 
         return {key: item.tolist() for key, item in data.items()}
 
@@ -174,3 +225,11 @@ class JsetReplier(object):
     def iter_3d(self, db, filters, fields):
         for col, f in filters:
             yield self.query_2d(db[col], f, fields)
+
+
+if __name__ == '__main__':
+    from pymongo import MongoClient
+
+    client = MongoClient(port=37017)
+    factor = Factor(client)
+    print(factor.read("symbol=000001.XSHE&start=2017-01-01", "PB,PE,datetime"))
