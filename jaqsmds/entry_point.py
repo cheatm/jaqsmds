@@ -7,7 +7,7 @@ import click
 group = click.Group("jaqsmds")
 
 
-@group.command()
+@group.command(help="Run server for jaqs.data.DataApi client.")
 @click.option("--frontend", "-f", default=None)
 @click.option("--backend", "-b", default=None)
 @click.option("--mongodb_url", "-u", default=None)
