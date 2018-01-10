@@ -2,8 +2,7 @@ import logging
 
 
 db_map = {
-    "factor": "factor",
-
+    "factor": "factor"
 }
 
 
@@ -16,3 +15,19 @@ server_config = {
     "level": logging.WARNING,
     "timeout": 10
 }
+
+
+def init(dct):
+    for name, configs in dct.items():
+        conf = globals()[name]
+        for key, value in configs:
+            conf[key] = value
+
+
+def init_file(path):
+    import json
+    import os
+
+    if os.path.isfile(path):
+        conf = json.load(open(path))
+        init(conf)

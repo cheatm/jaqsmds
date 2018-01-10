@@ -3,6 +3,7 @@ from jaqsmds.server.proxy import run_proxy
 import multiprocessing
 from logging.handlers import RotatingFileHandler
 from logging import StreamHandler
+from time import sleep
 import logging
 import os
 
@@ -57,7 +58,7 @@ class ServerManager(object):
             try:
                 self.check_proxy()
                 self.check_workers()
-                # sleep(self.timeout)
+                sleep(1)
             except KeyboardInterrupt:
                 import sys
                 sys.exit()
