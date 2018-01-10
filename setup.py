@@ -7,7 +7,7 @@ REQUIRES = open("requirements.txt").readlines()
 setup(
     name="jaqsmds",
     version="0.0.1",
-    pacjages=find_packages(),
+    packages=find_packages(),
     install_requires=REQUIRES,
     entry_points={"console_scripts": ["jaqsmds = jaqsmds.entry_point:group"]},
     license="Apache License v2",
