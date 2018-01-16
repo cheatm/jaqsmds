@@ -3,7 +3,6 @@ from datetime import datetime
 import logging
 
 from jaqs.data.dataapi.jrpc_py import _unpack_msgpack_snappy, _pack_msgpack_snappy
-import pymongo
 
 
 class Replier(object):
@@ -57,29 +56,3 @@ class RegularReplier(Replier):
         super().__init__()
         self.methods[".sys.heartbeat"] = heartbeat
         self.methods["auth.login"] = login
-
-
-class DBReplier(RegularReplier):
-
-    def __init__(self, host):
-        super().__init__()
-        from jaqsmds.server.repliers.jset_replier import JsetReplier
-        self.client = pymongo.MongoClient(host)
-        self.jset = JsetReplier(self.client)
-        self.methods["jset.query"] = self.handle_jset
-
-    def handle_jset(self, dct):
-        dct = dct.copy()
-        logging.warning("jset: %s", dct)
-        try:
-            result = self.jset.receive(**dct.pop("params"))
-        except Exception as e:
-            dct["error"] = {"error": -1, "message": str(e)}
-            dct["result"] = {}
-            logging.error('jset: %s', e)
-        else:
-            dct["result"] = result
-            no_error(dct)
-
-        dct["time"] = datetime.now().timestamp() * 1000
-        return dct
