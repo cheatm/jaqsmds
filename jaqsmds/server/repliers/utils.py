@@ -147,7 +147,7 @@ class Jset2DReader(object):
 
 class Jset3DReader(object):
 
-    field_filter = field_filter
+    field_filter = staticmethod(field_filter)
 
     def __init__(self, db, key="symbol", ranges=None, view=None):
         self.db = db

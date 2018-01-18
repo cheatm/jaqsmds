@@ -4,7 +4,8 @@ import logging
 db_map = {
     "jset.query": {"lb": "lb",
                    "jz": "jz",
-                   "factor": "factor"},
+                   "factor": "factor",
+                   "lb.secDailyIndicator": "SecDailyIndicator"},
     "jsd.query": "Stock_D"
 }
 
@@ -16,7 +17,6 @@ server_config = {
     "process": 5,
     "log_dir": "",
     "level": logging.WARNING,
-    "timeout": 10
 }
 
 

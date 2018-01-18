@@ -1,10 +1,10 @@
 from datetime import datetime
 import logging
 import zmq
-from jaqsmds.server.protocol import Worker, ENCODE
-from jaqsmds.utils.zmqs import del_blank, fill_blank
+from jaqsmds.server.protocol import ENCODE
 
 
+# 工作进程，接收客户端请求读取数据返回
 class SimpleWorker():
 
     def __init__(self, backend, replier):
@@ -29,24 +29,11 @@ class SimpleWorker():
                 break
 
 
-def run_worker(backend, mongodb_url, log_file=None, level=logging.WARNING, db_map=None):
+# 启动工作进程
+def run_worker(backend, mongodb_url, log_dir=None, log_file=None, level=logging.WARNING, db_map=None):
     from jaqsmds.server.repliers.db_replier import DBReplier
-    from logging.handlers import RotatingFileHandler
-    from logging import StreamHandler
+    from jaqsmds import logger
 
-    if log_file:
-        logging.basicConfig(
-            format="%(asctime)s | %(levelname)s | %(filename)s:%(lineno)d | %(message)s",
-            handlers=[RotatingFileHandler(log_file, maxBytes=1024*1024, backupCount=5),
-                      StreamHandler()],
-            level=level
-        )
-    else:
-        logging.basicConfig(
-            format="%(asctime)s | %(levelname)s | %(filename)s:%(lineno)d | %(message)s",
-            handlers=[StreamHandler()],
-            level=level
-        )
-
+    logger.init(log_dir, log_file, level)
     worker = SimpleWorker(backend, DBReplier(mongodb_url, db_map))
     worker.run()

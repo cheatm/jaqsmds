@@ -1,5 +1,4 @@
-from jaqsmds.server.repliers.utils import iter_filter, split_conditions, field_filter, MongodbHandler, \
-    Jset3DReader, Jset2DReader
+from jaqsmds.server.repliers.utils import MongodbHandler, Jset3DReader, Jset2DReader
 from jaqsmds.server.repliers.factor import FactorReader
 from functools import partial
 
@@ -10,7 +9,7 @@ SecDividendReader = partial(Jset2DReader, ranges={"date": "ann_date"})
 SecAdjFactorReader = partial(Jset2DReader, ranges={"date": "date"})
 SecSuspReader = partial(Jset2DReader, ranges={"date": "ann_date"})
 SecIndustryReader = partial(Jset2DReader)
-# SecDailyIndicatorReader = partial(JsetReader2D, ranges={"date": "trade_date"})
+SecDailyIndicatorReader = partial(Jset3DReader, ranges={"date": "trade_date"})
 BalanceSheetReader = partial(
     Jset2DReader,
     ranges={"date": "ann_date", "actdate": "act_ann_date", "reportdate": "report_date"}
@@ -45,7 +44,7 @@ LB = {"lb.secDividend": SecDividendReader,
 
 
 def lb_readers(db):
-    return {name: cls(db[name[3:]]) for name, cls in LB.items()}
+    return {name: cls(db[name[3:]], view=name) for name, cls in LB.items()}
 
 
 JZ = {"jz.instrumentInfo": InstrumentInfoReader,
@@ -53,12 +52,24 @@ JZ = {"jz.instrumentInfo": InstrumentInfoReader,
 
 
 def jz_readers(db):
-    return {name: cls(db[name[3:]]) for name, cls in JZ.items()}
+    return {name: cls(db[name[3:]], view=name) for name, cls in JZ.items()}
+
+
+DB_READER = {
+    "lb.secDailyIndicator": SecDailyIndicatorReader
+}
+
+
+def iter_db_readers(client, dct):
+    for view, cls in DB_READER.items():
+        db = dct.get(view, None)
+        if db:
+            yield view, cls(client[db], view=view)
 
 
 class JsetReader(MongodbHandler):
 
-    def __init__(self, client, lb=None, jz=None, factor=None):
+    def __init__(self, client, lb=None, jz=None, factor=None, **other):
         super(JsetReader, self).__init__(client)
         self.handlers = {}
 
@@ -68,6 +79,8 @@ class JsetReader(MongodbHandler):
             self.handlers.update(jz_readers(self.client[jz]))
         if factor:
             self.handlers['factor'] = FactorReader(self.client[factor])
+
+        self.handlers.update(dict(iter_db_readers(self.client, other)))
 
     def receive(self, view, filter, fields, **kwargs):
         reader = self.handlers.get(view, None)
