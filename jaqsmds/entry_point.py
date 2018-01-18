@@ -1,5 +1,5 @@
 from jaqsmds.server.data_server import start_service
-from jaqsmds.config import server_config
+from jaqsmds import config
 import os
 import click
 
@@ -15,19 +15,16 @@ group = click.Group("jaqsmds")
 @click.option("--log_dir", "-d", default=None)
 @click.option("--level", "-l", default=None, type=click.INT)
 @click.option("--timeout", "-t", default=None, type=click.INT)
-@click.argument("config", required=False, default="config.json")
-def server(config=None, **kwargs):
-    if os.path.isfile(config):
-        import json
-        sc = json.load(open(config))
-        for key, value in sc.get("server_config", {}).items():
-            server_config[key] = value
+@click.argument("conf", required=False, default="config.json")
+def server(conf=None, **kwargs):
+    if os.path.isfile(conf):
+        config.init_file(conf)
 
     for key, value in kwargs.items():
         if value is not None:
-            server_config[key] = value
+            config.server_config[key] = value
 
-    start_service(**server_config)
+    start_service(db_map=config.db_map, **config.server_config)
 
 
 if __name__ == '__main__':

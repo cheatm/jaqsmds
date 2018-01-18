@@ -10,7 +10,9 @@ import os
 
 class ServerManager(object):
 
-    def __init__(self, frontend, backend, mongodb_url, process_count=5, log_dir="", level=logging.WARNING, timeout=10):
+    def __init__(self, frontend, backend, mongodb_url,
+                 process_count=5, log_dir="", level=logging.WARNING,
+                 timeout=10, db_map=None):
         super(ServerManager, self).__init__()
         self.frontend = frontend
         self.backend = backend
@@ -19,6 +21,7 @@ class ServerManager(object):
         self.log_dir = log_dir
         self.level = level
         self.timeout = timeout
+        self.db_map = db_map
         self.proxy = None
         self.workers = {}
         self._running = False
@@ -36,7 +39,8 @@ class ServerManager(object):
         logging.warning("Starting Worker-%s." % name)
         p = multiprocessing.Process(target=run_worker,
                                     args=(self.backend, self.mongodb_url,
-                                          os.path.join(self.log_dir, "Worker-%s.log" % name), self.level))
+                                          os.path.join(self.log_dir, "Worker-%s.log" % name),
+                                          self.level, self.db_map))
         p.daemon = True
         p.start()
         logging.warning("Worker-%s working." % name)
@@ -75,7 +79,8 @@ class ServerManager(object):
                 self.workers[name] = self.new_worker(name)
 
 
-def start_service(frontend, backend, mongodb_url, process=5, log_dir="", level=logging.WARNING, timeout=10):
+def start_service(frontend, backend, mongodb_url, process=5, log_dir="",
+                  level=logging.WARNING, timeout=10, db_map=None):
     logging.basicConfig(
         format="%(asctime)s | %(levelname)s | %(filename)s:%(lineno)d | %(message)s",
         handlers=[RotatingFileHandler(os.path.join(log_dir, "main.log"), maxBytes=1024*1024, backupCount=5),
@@ -86,7 +91,7 @@ def start_service(frontend, backend, mongodb_url, process=5, log_dir="", level=l
     init_log(frontend=frontend, backend=backend, mongodb_url=mongodb_url, process=process, log_dir=log_dir,
              level=level, timeout=timeout)
 
-    manager = ServerManager(frontend, backend, mongodb_url, process, log_dir, level, timeout)
+    manager = ServerManager(frontend, backend, mongodb_url, process, log_dir, level, timeout, db_map)
     manager.start()
 
 

@@ -2,7 +2,10 @@ import logging
 
 
 db_map = {
-    "factor": "factor"
+    "jset.query": {"lb": "lb",
+                   "jz": "jz",
+                   "factor": "factor"},
+    "jsd.query": "Stock_D"
 }
 
 
@@ -17,11 +20,22 @@ server_config = {
 }
 
 
+conf = {"server_config": server_config,
+        "db_map": db_map}
+
+
 def init(dct):
-    for name, configs in dct.items():
-        conf = globals()[name]
-        for key, value in configs:
-            conf[key] = value
+    update(conf, dct)
+
+
+def update(origin, new):
+    for key, value in origin.items():
+        new_value = new.get(key, None)
+        if new_value:
+            if isinstance(value, dict):
+                update(value, new_value)
+            else:
+                origin[key] = new_value
 
 
 def init_file(path):

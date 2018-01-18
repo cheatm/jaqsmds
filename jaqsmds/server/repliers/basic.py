@@ -52,6 +52,8 @@ def login(dct):
 
 class RegularReplier(Replier):
 
+    no_error = no_error
+
     def __init__(self):
         super().__init__()
         self.methods[".sys.heartbeat"] = heartbeat
