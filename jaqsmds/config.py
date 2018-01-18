@@ -5,7 +5,11 @@ db_map = {
     "jset.query": {"lb": "lb",
                    "jz": "jz",
                    "factor": "factor",
-                   "lb.secDailyIndicator": "SecDailyIndicator"},
+                   "lb.secDailyIndicator": "SecDailyIndicator",
+                   "lb.mfNav": "MFNav",
+                   "lb.mfDividend": "MFDividend",
+                   "lb.mfPortfolio": "MFPortfolio",
+                   "lb.mfBondPortfolio": "MFBondPortfolio"},
     "jsd.query": "Stock_D"
 }
 

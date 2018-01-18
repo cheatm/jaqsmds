@@ -28,13 +28,16 @@ ProfitExpressReader = partial(
 )
 SecRestrictedReader = partial(Jset2DReader, ranges={"date": "list_date"})
 IndexConsReader = partial(Jset2DReader, ranges={"date": "in_date"})
+MFNavReader = partial(Jset3DReader, ranges={"date": "ann_date", "pdate": "price_date"})
+MFDividendReader = partial(Jset3DReader, ranges={"date": "ann_date"})
+MFPortfolioReader = partial(Jset3DReader, ranges={"date": "ann_date"})
+MFBondPortfolioReader = partial(Jset3DReader, ranges={"date": "ann_date"})
 
 
 LB = {"lb.secDividend": SecDividendReader,
       "lb.secSusp": SecSuspReader,
       "lb.secIndustry": SecIndustryReader,
       "lb.secAdjFactor": SecAdjFactorReader,
-      # "lb.secDailyIndicator": SecDailyIndicatorReader,
       "lb.balanceSheet": BalanceSheetReader,
       "lb.income": IncomeReader,
       "lb.cashFlow": CashFlowReader,
@@ -56,7 +59,11 @@ def jz_readers(db):
 
 
 DB_READER = {
-    "lb.secDailyIndicator": SecDailyIndicatorReader
+    "lb.secDailyIndicator": SecDailyIndicatorReader,
+    "lb.mfNav": MFNavReader,
+    "lb.mfDividend": MFDividendReader,
+    "lb.mfPortfolio": MFPortfolioReader,
+    "lb.mfBondPortfolio": MFBondPortfolioReader,
 }
 
 

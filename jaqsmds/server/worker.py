@@ -1,8 +1,9 @@
 from datetime import datetime
 import logging
 import zmq
-from jaqsmds.server.protocol import ENCODE
 
+
+ENCODE = "utf-8"
 
 # 工作进程，接收客户端请求读取数据返回
 class SimpleWorker():
