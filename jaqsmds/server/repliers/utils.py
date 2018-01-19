@@ -47,7 +47,7 @@ def split_conditions(dct):
     for key, value in list(dct.items()):
         if ',' in value:
             del dct[key]
-            yield {"$or": [{key: v} for v in value]}
+            yield {"$or": [{key: v} for v in value.split(",")]}
 
 
 def time_range_daily(start=None, end=None):
