@@ -53,9 +53,9 @@ def split_conditions(dct):
 def time_range_daily(start=None, end=None):
     dct = {}
     if start:
-        dct['$gte'] = datetime.strptime(start, "%Y%m%d").replace(hour=15)
+        dct['$gte'] = datetime.strptime(start.replace("-", ""), "%Y%m%d").replace(hour=15)
     if end:
-        dct["%lte"] = datetime.strptime(end, "%Y%m%d").replace(hour=15)
+        dct["%lte"] = datetime.strptime(start.replace("-", ""), "%Y%m%d").replace(hour=15)
     return dct
 
 

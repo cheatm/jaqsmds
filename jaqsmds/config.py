@@ -1,4 +1,5 @@
 import logging
+import os
 
 
 db_map = {
@@ -19,8 +20,8 @@ server_config = {
     "backend": "tcp://127.0.0.1:23001",
     "mongodb_url": "mongodb://localhost:27017",
     "process": 5,
-    "log_dir": "",
-    "level": logging.WARNING,
+    "log_dir": os.environ.get("LOG_DIR", None),
+    "level": logging.WARNING
 }
 
 
