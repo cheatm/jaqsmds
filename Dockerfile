@@ -6,8 +6,8 @@ RUN pip install --no-cache-dir -i https://pypi.tuna.tsinghua.edu.cn/simple git+h
 RUN echo 'Asia/Shanghai' >/etc/timezone & cp /usr/share/zoneinfo/Asia/Shanghai /etc/localtime
 
 # ENV LOG_DIR="/log"
-VOLUME ["/config", "/log"]
+VOLUME ["/conf", "/log"]
 EXPOSE 23000
-WORKDIR /config
+WORKDIR /conf
 
 CMD ["jaqsmds", "server"]
