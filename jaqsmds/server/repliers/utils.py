@@ -138,7 +138,7 @@ class Jset2DReader(object):
             start = dct.pop("start_%s" % key, None)
             if start:
                 r["$gte"] = start
-            end = dct.get("end_%s" % key, None)
+            end = dct.pop("end_%s" % key, None)
             if end:
                 r["$lte"] = end
             if len(r):
