@@ -1,12 +1,12 @@
 from jaqsmds.server.repliers.basic import RegularReplier
-from jaqsmds.server.repliers.jset import JsetReader
+from jaqsmds.server.repliers.jset import JsetHandler
 from jaqsmds.server.repliers.daily import DailyReader
 from six import string_types
 import pymongo
 
 
 mapper = {
-    "jset.query": JsetReader,
+    "jset.query": JsetHandler,
     "jsd.query": DailyReader
 }
 

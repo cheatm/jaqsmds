@@ -43,11 +43,19 @@ def iter_filter(string):
             yield key, value
 
 
-def split_conditions(dct):
+def _split_conditions(dct):
     for key, value in list(dct.items()):
         if ',' in value:
             del dct[key]
-            yield {"$or": [{key: v} for v in value.split(",")]}
+            yield "$or", [{key: v} for v in value.split(",")]
+        else:
+            yield key, value
+
+
+def split_conditions(dct):
+    for key, value in _split_conditions(dct):
+        if isinstance(value, list):
+            yield {key: value}
 
 
 def time_range_daily(start=None, end=None):
@@ -110,27 +118,14 @@ class DBReader(MongodbHandler):
         raise NotImplementedError("func: _read should be implemented.")
 
 
-class Jset2DReader(object):
+class JsetReaderInterface(object):
 
-    def __init__(self, collection, ranges=None, view=None):
+    def __init__(self, ranges=None, view=None):
         self.view = view
-        self.collection = collection
         self.ranges = ranges if isinstance(ranges, dict) else {}
 
-    def read(self, filter, fields):
-        data = pd.DataFrame(list(self.collection.find(self.split_filter(filter), field_filter(fields))))
-        return {name: item.tolist() for name, item in data.items()}
-
-    def split_filter(self, string):
-        dct = dict(iter_filter(string))
-        f = dict(self.split_range(dct))
-        conditions = list(split_conditions(dct))
-        if len(conditions) == 1:
-            dct.update(conditions[0])
-        elif len(conditions) > 1:
-            dct["$and"] = conditions
-        dct.update(f)
-        return dct
+    def read(self, filter, view):
+        raise NotImplementedError("Should implement method: read")
 
     def split_range(self, dct):
         for key, value in self.ranges.items():
@@ -144,15 +139,45 @@ class Jset2DReader(object):
             if len(r):
                 yield value, r
 
+    def catch(self, dct):
+        yield from self.split_range(dct)
+        yield from _split_conditions(dct)
 
-class Jset3DReader(object):
+    def split_filter(self, dct):
+        f = {}
+        ors = []
+        for key, value in self.catch(dct):
+            if key != "$or":
+                f[key] = value
+            else:
+                ors.append({key: value})
+
+        if len(ors) == 1:
+            f.update(ors[0])
+        elif len(ors) > 1:
+            f["$and"] = ors
+        return f
+
+
+class Jset2DReader(JsetReaderInterface):
+
+    def __init__(self, collection, ranges=None, view=None):
+        super(Jset2DReader, self).__init__(ranges, view)
+        self.collection = collection
+
+    def read(self, filter, fields):
+        f = self.split_filter(dict(iter_filter(filter)))
+        data = pd.DataFrame(list(self.collection.find(f, field_filter(fields))))
+        return {name: item.tolist() for name, item in data.items()}
+
+
+class Jset3DReader(JsetReaderInterface):
 
     field_filter = staticmethod(field_filter)
 
     def __init__(self, db, key="symbol", ranges=None, view=None):
+        super(Jset3DReader, self).__init__(ranges, view)
         self.db = db
-        self.ranges = ranges if isinstance(ranges, dict) else {}
-        self.view = view
         self.key = key
 
     def read(self, filter, fields):
@@ -171,33 +196,11 @@ class Jset3DReader(object):
         return pd.DataFrame(list(self.db[symbol].find(f, p)))
 
     def adapt(self, filter, fields):
-        symbols, f = self.split_filter(filter)
+        dct = dict(iter_filter(filter))
+        symbols = self.catch_key(dct)
+        f = self.split_filter(dct)
         p = self.field_filter(fields)
         return symbols, f, p
 
-    def split_filter(self, string):
-        dct = dict(iter_filter(string))
-        keys = self.catch_key(dct)
-        f = dict(self.split_range(dct))
-        conditions = list(split_conditions(dct))
-        if len(conditions) == 1:
-            dct.update(conditions[0])
-        elif len(conditions) > 1:
-            dct["$and"] = conditions
-        dct.update(f)
-        return keys, dct
-
     def catch_key(self, dct):
         return dct.pop(self.key).split(",")
-
-    def split_range(self, dct):
-        for key, value in self.ranges.items():
-            r = {}
-            start = dct.pop("start_%s" % key, None)
-            if start:
-                r["$gte"] = start
-            end = dct.get("end_%s" % key, None)
-            if end:
-                r["$lte"] = end
-            if len(r):
-                yield value, r

@@ -27,11 +27,20 @@ ProfitExpressReader = partial(
     ranges={"anndate": "ann_date", "reportdate": "report_date"}
 )
 SecRestrictedReader = partial(Jset2DReader, ranges={"date": "list_date"})
-IndexConsReader = partial(Jset2DReader, ranges={"date": "in_date"})
+# IndexConsReader = partial(Jset2DReader, ranges={"date": "in_date"})
 MFNavReader = partial(Jset3DReader, ranges={"date": "ann_date", "pdate": "price_date"})
 MFDividendReader = partial(Jset3DReader, ranges={"date": "ann_date"})
 MFPortfolioReader = partial(Jset3DReader, ranges={"date": "ann_date"})
 MFBondPortfolioReader = partial(Jset3DReader, ranges={"date": "ann_date"})
+
+
+class IndexConsReader(Jset2DReader):
+
+    def split_range(self, dct):
+        start = dct.pop("start_date")
+        end = dct.pop('end_date')
+        yield "in_date", {"$lte": end}
+        yield "$or", [{"out_date": {"$gt": start}}, {'out_date': ""}, {"out_date": None}]
 
 
 LB = {"lb.secDividend": SecDividendReader,
@@ -74,10 +83,10 @@ def iter_db_readers(client, dct):
             yield view, cls(client[db], view=view)
 
 
-class JsetReader(MongodbHandler):
+class JsetHandler(MongodbHandler):
 
     def __init__(self, client, lb=None, jz=None, factor=None, **other):
-        super(JsetReader, self).__init__(client)
+        super(JsetHandler, self).__init__(client)
         self.handlers = {}
 
         if lb:

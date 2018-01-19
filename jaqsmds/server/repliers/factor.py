@@ -13,13 +13,10 @@ class FactorReader(Jset3DReader):
     def split_range(self, dct):
         r = time_range_daily(dct.pop("start", None), dct.pop("end", None))
         if len(r):
-            return {"datetime": r}
-        else:
-            return {}
+            yield "datetime", r
 
     def _read(self, symbol, f, p):
         data = super(FactorReader, self)._read(symbol, f, p)
         data["symbol"] = symbol
         data["datetime"] = data["datetime"].apply(date2str)
         return data
-
