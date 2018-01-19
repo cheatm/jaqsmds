@@ -29,6 +29,7 @@ class ServerManager(object):
     def new_proxy(self):
         logging.warning("Starting router.")
         proxy = multiprocessing.Process(target=run_proxy,
+                                        name="Router",
                                         args=(self.frontend, self.backend))
         proxy.daemon = True
         proxy.start()
@@ -37,10 +38,12 @@ class ServerManager(object):
 
     # 启动一个新的工作进程
     def new_worker(self, name):
-        logging.warning("Starting Worker-%s." % name)
+        worker_name = "Worker-%s" % name
+        logging.warning("Starting %s." % worker_name)
         p = multiprocessing.Process(target=run_worker,
+                                    name=worker_name,
                                     args=(self.backend, self.mongodb_url,
-                                          self.log_dir, "Worker-%s.log" % name,
+                                          self.log_dir, "%s.log" % worker_name,
                                           self.level, self.db_map))
         p.daemon = True
         p.start()

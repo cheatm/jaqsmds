@@ -1,8 +1,11 @@
+from jaqsmds import logger
 import logging
 import zmq
 
 
 def run_proxy(front, back):
+    logger.init(None)
+
     context = zmq.Context()
 
     # Socket facing clients

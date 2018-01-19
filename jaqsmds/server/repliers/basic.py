@@ -33,6 +33,7 @@ def no_error(dct):
 def heartbeat(dct):
     res = dct.copy()
     res.pop("params")
+    logging.debug("heartbeat: %s" % res)
     now_timestamp = datetime.now().timestamp()
     res["result"] = {"time": now_timestamp, "sub_hash": ""}
     no_error(dct)
@@ -43,10 +44,10 @@ def heartbeat(dct):
 def login(dct):
     res = dct.copy()
     params = res.pop("params")
+    logging.warning("login: %s" % params)
     res["result"] = "username: %s" % params["username"]
     no_error(res)
     res['time'] = datetime.now().timestamp()
-    logging.warning("login: %s" % params)
     return res
 
 
