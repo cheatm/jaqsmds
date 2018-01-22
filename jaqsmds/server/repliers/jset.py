@@ -4,7 +4,6 @@ from functools import partial
 
 
 InstrumentInfoReader = partial(Jset2DReader)
-SecTradeCalReader = partial(Jset2DReader, ranges={"date": "trade_date"})
 SecDividendReader = partial(Jset2DReader, ranges={"date": "ann_date"})
 SecAdjFactorReader = partial(Jset2DReader, ranges={"date": "date"})
 SecSuspReader = partial(Jset2DReader, ranges={"date": "ann_date"})
@@ -27,11 +26,18 @@ ProfitExpressReader = partial(
     ranges={"anndate": "ann_date", "reportdate": "report_date"}
 )
 SecRestrictedReader = partial(Jset2DReader, ranges={"date": "list_date"})
-# IndexConsReader = partial(Jset2DReader, ranges={"date": "in_date"})
 MFNavReader = partial(Jset3DReader, ranges={"date": "ann_date", "pdate": "price_date"})
 MFDividendReader = partial(Jset3DReader, ranges={"date": "ann_date"})
 MFPortfolioReader = partial(Jset3DReader, ranges={"date": "ann_date"})
 MFBondPortfolioReader = partial(Jset3DReader, ranges={"date": "ann_date"})
+
+
+class SecTradeCalReader(Jset2DReader):
+
+    def split_range(self, dct):
+        start = dct.pop("start_date", 0)
+        end = dct.pop("end_date", 99999999)
+        yield "trade_date", {"$gte": int(start), "$lte": int(end)}
 
 
 class IndexConsReader(Jset2DReader):
