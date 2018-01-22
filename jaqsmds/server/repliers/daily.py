@@ -20,10 +20,14 @@ def check(symbol, begin_date, end_date):
     return symbol, begin_date, end_date
 
 
+PRICE = ["open", "high", "low", "close", "vwap"]
+
+
 class DailyReader(DBReader):
 
-    def __init__(self, client, db):
+    def __init__(self, client, db, adj="SecAdjFactor"):
         super(DailyReader, self).__init__(client, db, "daily")
+        self.adj = self.client[adj]
         self.empty = {}
 
     def adapt(self, symbol, begin_date, end_date, fields="", adjust_mode="none", freq="1d"):
@@ -31,16 +35,47 @@ class DailyReader(DBReader):
         symbols = symbol.replace(" ", "").split(",")
         f = {"datetime": {"$gte": begin_date, "$lte": end_date}}
         p = fill_field_filter(fields, "datetime")
-        return symbols, (f, p, freq), self.empty
+        if "vwap" in p:
+            p["volume"] = 1
+            p["turnover"] = 1
+        return symbols, (f, p, freq, adjust_mode), self.empty
 
-    def read_one(self, symbol, f, p, freq, **kwargs):
+    def read_one(self, symbol, f, p, freq, adj_mode, **kwargs):
         code = symbol[:6]
         col = self.db[expand(code)]
         data = pd.DataFrame(list(col.find(f, p)))
-        data["datetime"] = data["datetime"].apply(date2str)
+        data["trade_date"] = data.pop("datetime").apply(date2str)
         data["freq"] = freq
-        data["vwap"] = (data["turnover"] / data["volume"]).round(2)
+        if "vwap" in p:
+            data["vwap"] = (data["turnover"] / data["volume"]).round(2)
+        if adj_mode != "none":
+            data = self.adj_data(symbol, adj_mode, data)
         data["trade_status"] = "交易"
         data["symbol"] = symbol
         data["code"] = code
         return data
+
+    def adj_data(self, symbol, mode, data):
+        f = {"trade_date": {"$gte": data["trade_date"][0], "$lte": data.iloc[-1]["trade_date"]}}
+        p = {"adjust_factor": 1, "_id": 0, "trade_date": 1}
+        adj = pd.DataFrame(list(self.adj[symbol].find(f, p))).set_index("trade_date").applymap(float)
+        if mode != "post":
+            adj = adj.apply(lambda s: s/adj.iloc[-1]["adjust_factor"])
+        new = data.set_index("trade_date", drop=False)
+        new["adj"] = adj["adjust_factor"]
+        new["adj"] = new["adj"].ffill().bfill()
+        for p in PRICE:
+            if p in new.columns:
+                new[p] = (new[p] * new["adj"]).round(2)
+        new.pop("adj")
+        return new
+
+
+if __name__ == '__main__':
+    from pymongo import MongoClient
+
+    params = {'symbol': '600000.SH,000001.SZ', 'fields': 'open,trade_date,high,symbol,trade_status,volume',
+              'begin_date': 20170101, 'end_date': 99999999, 'adjust_mode': 'post', 'freq': '1d'}
+    client = MongoClient(port=37017)
+    daily = DailyReader(client, "Stock_D")
+    print(daily.receive(**params))
