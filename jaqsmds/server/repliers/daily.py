@@ -1,6 +1,7 @@
 from jaqsmds.server.repliers.utils import fill_field_filter, date2str, DBReader, expand
 from datetime import datetime
 import pandas as pd
+import logging
 
 
 def check(symbol, begin_date, end_date):
@@ -43,12 +44,16 @@ class DailyReader(DBReader):
 
     def read_one(self, symbol, f, p, freq, adj_mode, **kwargs):
         code = symbol[:6]
-        col = self.db[expand(code)]
+        col = self.db[expand(symbol)]
+        print(col)
         data = pd.DataFrame(list(col.find(f, p)))
         data["trade_date"] = data.pop("datetime").apply(date2str)
         data["freq"] = freq
         if "vwap" in p:
-            data["vwap"] = (data["turnover"] / data["volume"]).round(2)
+            try:
+                data["vwap"] = (data["turnover"] / data["volume"]).round(2)
+            except Exception as e:
+                logging.error("daily| %s | %s", symbol, e)
         if adj_mode != "none":
             data = self.adj_data(symbol, adj_mode, data)
         data["trade_status"] = "交易"

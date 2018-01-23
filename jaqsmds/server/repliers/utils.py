@@ -4,10 +4,10 @@ import logging
 
 
 def expand(code):
-    if code.startswith("6"):
-        return code + ".XSHG"
+    if code.endswith(".SH"):
+        return code[:-3] + ".XSHG"
     else:
-        return code + ".XSHE"
+        return code[:-3] + ".XSHE"
 
 
 def no_error(dct):
