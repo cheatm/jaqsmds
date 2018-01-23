@@ -25,9 +25,10 @@ PRICE = ["open", "high", "low", "close", "vwap"]
 
 class DailyReader(DBReader):
 
-    def __init__(self, client, db, adj="SecAdjFactor"):
+    def __init__(self, client, db, adj="lb.secAdjFactor"):
         super(DailyReader, self).__init__(client, db, "daily")
-        self.adj = self.client[adj]
+        adjs = adj.split(".")
+        self.adj = self.client[adjs[0]][adjs[1]]
         self.empty = {}
 
     def adapt(self, symbol, begin_date, end_date, fields="", adjust_mode="none", freq="1d"):
@@ -56,9 +57,10 @@ class DailyReader(DBReader):
         return data
 
     def adj_data(self, symbol, mode, data):
-        f = {"trade_date": {"$gte": data["trade_date"][0], "$lte": data.iloc[-1]["trade_date"]}}
+        f = {"trade_date": {"$gte": data["trade_date"][0], "$lte": data.iloc[-1]["trade_date"]},
+             "symbol": symbol}
         p = {"adjust_factor": 1, "_id": 0, "trade_date": 1}
-        adj = pd.DataFrame(list(self.adj[symbol].find(f, p))).set_index("trade_date").applymap(float)
+        adj = pd.DataFrame(list(self.adj.find(f, p))).set_index("trade_date").applymap(float)
         if mode != "post":
             adj = adj.apply(lambda s: s/adj.iloc[-1]["adjust_factor"])
         new = data.set_index("trade_date", drop=False)
@@ -69,13 +71,3 @@ class DailyReader(DBReader):
                 new[p] = (new[p] * new["adj"]).round(2)
         new.pop("adj")
         return new
-
-
-if __name__ == '__main__':
-    from pymongo import MongoClient
-
-    params = {'symbol': '600000.SH,000001.SZ', 'fields': 'open,trade_date,high,symbol,trade_status,volume',
-              'begin_date': 20170101, 'end_date': 99999999, 'adjust_mode': 'post', 'freq': '1d'}
-    client = MongoClient(port=37017)
-    daily = DailyReader(client, "Stock_D")
-    print(daily.receive(**params))
