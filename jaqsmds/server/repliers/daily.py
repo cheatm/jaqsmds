@@ -60,7 +60,11 @@ class DailyReader(DBReader):
         f = {"trade_date": {"$gte": data["trade_date"][0], "$lte": data.iloc[-1]["trade_date"]},
              "symbol": symbol}
         p = {"adjust_factor": 1, "_id": 0, "trade_date": 1}
-        adj = pd.DataFrame(list(self.adj.find(f, p))).set_index("trade_date").applymap(float)
+        adj = pd.DataFrame(list(self.adj.find(f, p)))
+        if len(adj):
+            adj = adj.set_index("trade_date").applymap(float)
+        else:
+            return data
         if mode != "post":
             adj = adj.apply(lambda s: s/adj.iloc[-1]["adjust_factor"])
         new = data.set_index("trade_date", drop=False)
