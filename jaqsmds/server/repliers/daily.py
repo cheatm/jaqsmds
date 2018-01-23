@@ -45,7 +45,6 @@ class DailyReader(DBReader):
     def read_one(self, symbol, f, p, freq, adj_mode, **kwargs):
         code = symbol[:6]
         col = self.db[expand(symbol)]
-        print(col)
         data = pd.DataFrame(list(col.find(f, p)))
         data["trade_date"] = data.pop("datetime").apply(date2str)
         data["freq"] = freq
