@@ -5,7 +5,7 @@ from functools import partial
 
 InstrumentInfoReader = partial(Jset2DReader)
 SecDividendReader = partial(Jset2DReader, ranges={"date": "ann_date"})
-SecAdjFactorReader = partial(Jset2DReader, ranges={"date": "date"})
+SecAdjFactorReader = partial(Jset2DReader, ranges={"date": "trade_date"})
 SecSuspReader = partial(Jset2DReader, ranges={"date": "ann_date"})
 SecIndustryReader = partial(Jset2DReader)
 SecDailyIndicatorReader = partial(Jset3DReader, ranges={"date": "trade_date"})
