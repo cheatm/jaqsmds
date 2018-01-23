@@ -30,6 +30,7 @@ MFNavReader = partial(Jset3DReader, ranges={"date": "ann_date", "pdate": "price_
 MFDividendReader = partial(Jset3DReader, ranges={"date": "ann_date"})
 MFPortfolioReader = partial(Jset3DReader, ranges={"date": "ann_date"})
 MFBondPortfolioReader = partial(Jset3DReader, ranges={"date": "ann_date"})
+IndexWeightRangeReader = partial(Jset2DReader, ranges={"date": "trade_date"})
 
 
 class SecTradeCalReader(Jset2DReader):
@@ -58,7 +59,8 @@ LB = {"lb.secDividend": SecDividendReader,
       "lb.cashFlow": CashFlowReader,
       "lb.profitExpress": ProfitExpressReader,
       "lb.secRestricted": SecRestrictedReader,
-      "lb.indexCons": IndexConsReader}
+      "lb.indexCons": IndexConsReader,
+      "lb.indexWeightRange": IndexWeightRangeReader}
 
 
 def lb_readers(db):
