@@ -29,6 +29,7 @@ class QueryStructure(object):
             f = ",".join(fields)
         else:
             f = ",".join(self.fields)
+            # f = ""
         return {
             "view": self.view,
             "filter": self._filter(**filters),

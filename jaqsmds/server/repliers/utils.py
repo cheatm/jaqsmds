@@ -1,4 +1,5 @@
 from datetime import datetime
+from collections import Iterable
 import pandas as pd
 import logging
 
@@ -74,7 +75,7 @@ class MongodbHandler(object):
 
     def handle(self, dct):
         dct = dct.copy()
-        logging.warning("Message: %s", dct)
+        logging.warning("Message | %s", dct)
         try:
             result = self.receive(**dct.pop("params"))
         except Exception as e:
@@ -86,6 +87,7 @@ class MongodbHandler(object):
             no_error(dct)
 
         dct["time"] = datetime.now().timestamp() * 1000
+        logging.warning("Reply | id=%s", dct.get('id', None))
         return dct
 
     def receive(self, **kwargs):
@@ -120,9 +122,15 @@ class DBReader(MongodbHandler):
 
 class JsetReaderInterface(object):
 
-    def __init__(self, ranges=None, view=None):
+    def __init__(self, ranges=None, view=None, defaults=None):
         self.view = view
         self.ranges = ranges if isinstance(ranges, dict) else {}
+        if isinstance(defaults, dict):
+            self.defaults = defaults
+        elif isinstance(defaults, Iterable):
+            self.defaults = dict.fromkeys(defaults, 1)
+        else:
+            self.defaults = {}
 
     def read(self, filter, view):
         raise NotImplementedError("Should implement method: read")
@@ -161,13 +169,15 @@ class JsetReaderInterface(object):
 
 class Jset2DReader(JsetReaderInterface):
 
-    def __init__(self, collection, ranges=None, view=None):
-        super(Jset2DReader, self).__init__(ranges, view)
+    def __init__(self, collection, *args, **kwargs):
+        super(Jset2DReader, self).__init__(*args, **kwargs)
         self.collection = collection
 
     def read(self, filter, fields):
         f = self.split_filter(dict(iter_filter(filter)))
-        data = pd.DataFrame(list(self.collection.find(f, field_filter(fields))))
+        p = field_filter(fields)
+        p.update(self.defaults)
+        data = pd.DataFrame(list(self.collection.find(f, p)))
         return {name: item.tolist() for name, item in data.items()}
 
 
@@ -175,8 +185,8 @@ class Jset3DReader(JsetReaderInterface):
 
     field_filter = staticmethod(field_filter)
 
-    def __init__(self, db, key="symbol", ranges=None, view=None):
-        super(Jset3DReader, self).__init__(ranges, view)
+    def __init__(self, db, key="symbol", *args, **kwargs):
+        super(Jset3DReader, self).__init__(*args, **kwargs)
         self.db = db
         self.key = key
 
@@ -200,6 +210,7 @@ class Jset3DReader(JsetReaderInterface):
         symbols = self.catch_key(dct)
         f = self.split_filter(dct)
         p = self.field_filter(fields)
+        p.update(self.defaults)
         return symbols, f, p
 
     def catch_key(self, dct):
