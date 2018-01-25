@@ -141,8 +141,7 @@ class JsetHandler(MongodbHandler):
     def receive(self, view, filter, fields, **kwargs):
         reader = self.handlers.get(view, None)
         if reader is not None:
-            r = reader.read(filter, fields)
-            return {name: item.tolist() for name, item in r.items()}
+            return reader.read(filter, fields)
         else:
             raise ValueError("Invalid view: %s" % view)
 
