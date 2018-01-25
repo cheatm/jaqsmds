@@ -75,11 +75,21 @@ class DailyReader(DBReader):
         return data
 
 
+def reset_adj(adj, index):
+    try:
+        return pd.Series(adj.set_index(["symbol", "trade_date"])["adjust_factor"], index, dtype=float)
+    except:
+        return pd.Series(
+            adj.drop_duplicates(["symbol", "trade_date"]).set_index(["symbol", "trade_date"])["adjust_factor"],
+            index, dtype=float
+        )
+
+
 def adjust(price, adj, mode):
     if isinstance(price, pd.DataFrame) and isinstance(adj, pd.DataFrame):
         index = pd.MultiIndex.from_arrays([price['symbol'].values, price["trade_date"].values],
                                           names=["symbol", "trade_date"])
-        factor = pd.Series(adj.set_index(["symbol", "trade_date"])["adjust_factor"], index, dtype=float)
+        factor = reset_adj(adj, index)
         if mode == "post":
             for name in factor.index.levels[0]:
                 factor.loc[name] = factor.loc[name].ffill().bfill().values
