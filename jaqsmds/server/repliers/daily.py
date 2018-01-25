@@ -41,7 +41,10 @@ class DailyReader(DBReader):
                 "symbol=%s&start_date=%s&end_date=%s" % (symbol, begin_date, end_date),
                 ""
             )
-            return adjust(data, adj, mode)
+            if len(adj):
+                return adjust(data, adj, mode)
+            else:
+                return data
 
     def adapt(self, symbol, begin_date, end_date, fields="", adjust_mode="none", freq="1d"):
         symbol, begin_date, end_date = check(symbol, begin_date, end_date)

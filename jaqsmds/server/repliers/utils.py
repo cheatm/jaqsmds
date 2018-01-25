@@ -82,7 +82,7 @@ class MongodbHandler(object):
         except Exception as e:
             dct["error"] = {"error": -1, "message": str(e)}
             dct["result"] = {}
-            logging.error('jset: %s', e)
+            logging.error('handler | %s', e)
         else:
             dct["result"] = result
             no_error(dct)
