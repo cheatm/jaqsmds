@@ -5,9 +5,12 @@ from six import string_types
 import pymongo
 
 
+JSET = "jset.query"
+JSD = "jsd.query"
+
 mapper = {
-    "jset.query": JsetHandler,
-    "jsd.query": DailyReader
+    JSET: JsetHandler,
+    JSD: DailyReader
 }
 
 
@@ -18,13 +21,31 @@ class DBReplier(RegularReplier):
         self.client = pymongo.MongoClient(host)
         self.db_map = db_map if db_map else {}
         self.handlers = {}
-        for method, cls in mapper.items():
+
+        for method, func in self.mapper:
             db = self.db_map.get(method, None)
-            if isinstance(db, string_types):
-                handler = cls(self.client, db)
-            elif isinstance(db, dict):
-                handler = cls(self.client, **db)
-            else:
-                continue
-            self.handlers[method] = handler
-            self.methods[method] = handler.handle
+            if db:
+                func(self, db)
+
+        # for method, cls in mapper.items():
+        #     db = self.db_map.get(method, None)
+        #     if isinstance(db, string_types):
+        #         handler = cls(self.client, db)
+        #     elif isinstance(db, dict):
+        #         handler = cls(self.client, **db)
+        #     else:
+        #         continue
+        #     self.handlers[method] = handler
+        #     self.methods[method] = handler.handle
+
+    def init_jsd(self, db):
+        handler = DailyReader(self.client, db, self.handlers[JSET]["lb.secAdjFactor"])
+        self.handlers[JSD] = handler
+        self.methods[JSD] = handler.handle
+
+    def init_jset(self, dbs):
+        handler = JsetHandler(self.client, **dbs)
+        self.handlers[JSET] = handler
+        self.methods[JSET] = handler.handle
+
+    mapper = ((JSET, init_jset), (JSD, init_jsd))

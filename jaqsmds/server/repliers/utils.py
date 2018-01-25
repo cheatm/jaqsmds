@@ -78,6 +78,7 @@ class MongodbHandler(object):
         logging.warning("Message | %s", dct)
         try:
             result = self.receive(**dct.pop("params"))
+            result = {name: item.tolist() for name, item in result.items()}
         except Exception as e:
             dct["error"] = {"error": -1, "message": str(e)}
             dct["result"] = {}
@@ -103,8 +104,7 @@ class DBReader(MongodbHandler):
 
     def receive(self, **kwargs):
         names, args, kws = self.adapt(**kwargs)
-        data = pd.concat(list(self.iter_read(names, *args, **kws)))
-        return {name: item.tolist() for name, item in data.items()}
+        return pd.concat(list(self.iter_read(names, *args, **kws)), ignore_index=True)
 
     def adapt(self, **kwargs):
         raise NotImplementedError("func: adapt should be implemented.")
@@ -177,8 +177,7 @@ class Jset2DReader(JsetReaderInterface):
         f = self.split_filter(dict(iter_filter(filter)))
         p = field_filter(fields)
         p.update(self.defaults)
-        data = pd.DataFrame(list(self.collection.find(f, p)))
-        return {name: item.tolist() for name, item in data.items()}
+        return pd.DataFrame(list(self.collection.find(f, p)))
 
 
 class Jset3DReader(JsetReaderInterface):
@@ -192,8 +191,7 @@ class Jset3DReader(JsetReaderInterface):
 
     def read(self, filter, fields):
         symbols, f, p = self.adapt(filter, fields)
-        data = pd.concat(list(self.iter_read(symbols, f, p)))
-        return {name: item.tolist() for name, item in data.items()}
+        return pd.concat(list(self.iter_read(symbols, f, p)))
 
     def iter_read(self, symbols, f, p):
         for symbol in symbols:
