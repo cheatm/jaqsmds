@@ -1,4 +1,4 @@
-from jaqsmds.server.repliers.utils import fill_field_filter, date2str, DBReader, expand
+from jaqsmds.server.repliers.utils import fill_field_filter, date2str, DBHandler, expand
 from datetime import datetime
 import pandas as pd
 import logging
@@ -24,20 +24,20 @@ def check(symbol, begin_date, end_date):
 PRICE = ["open", "high", "low", "close", "vwap"]
 
 
-class DailyReader(DBReader):
+class DailyHandler(DBHandler):
 
     def __init__(self, client, db, adj=None):
-        super(DailyReader, self).__init__(client, db, "daily")
+        super(DailyHandler, self).__init__(client, db, "daily")
         self.adj = adj
         self.empty = {}
 
     def receive(self, symbol, begin_date, end_date, **kwargs):
-        data = super(DailyReader, self).receive(symbol=symbol, begin_date=begin_date, end_date=end_date, **kwargs)
+        data = super(DailyHandler, self).receive(symbol=symbol, begin_date=begin_date, end_date=end_date, **kwargs)
         mode = kwargs.get("adjust_mode", "none")
         if mode == "none":
             return data
         else:
-            adj = self.adj.read(
+            adj = self.adj.parse(
                 "symbol=%s&start_date=%s&end_date=%s" % (symbol, begin_date, end_date),
                 ""
             )

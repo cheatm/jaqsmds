@@ -28,7 +28,8 @@ IncomeReader = partial(
     Jset2DReader,
     ranges={"date": "ann_date", "actdate": "act_ann_date", "reportdate": "report_date"},
     defaults=['ann_date', 'int_income', 'tot_oper_cost', 'net_int_income', 'oper_exp', 'oper_profit',
-              'oper_rev', 'report_date', 'symbol', 'less_handling_chrg_comm_exp', 'tot_profit', 'total_oper_rev']
+              'oper_rev', 'report_date', 'symbol', 'less_handling_chrg_comm_exp', 'tot_profit', 'total_oper_rev'],
+    hint="symbol"
 )
 CashFlowReader = partial(
     Jset2DReader,
