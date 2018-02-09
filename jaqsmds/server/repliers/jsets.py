@@ -1,4 +1,4 @@
-from jaqsmds.server.repliers.utils import QueryInterpreter as Qi, MongodbHandler, ColReader
+from jaqsmds.server.repliers.utils import QueryInterpreter as Qi, MongodbHandler, ColReader, DBReader
 from jaqsmds.server.repliers.factor import FactorReader
 from functools import partial
 
@@ -19,7 +19,10 @@ SecIndustry = Qi("lb.secIndustry",
                  defaults=['in_date', 'industry1_code', 'industry1_name', 'industry2_code',
                            'industry2_name', 'industry3_code', 'industry3_name', 'industry4_code',
                            'industry4_name', 'industry_src', 'out_date', 'symbol'])
-SecDailyIndicator = Qi("lb.secDailyIndicator", defaults=['symbol', 'trade_date'], **{"date": "trade_date"})
+SecDailyIndicator = Qi("lb.secDailyIndicator",
+                       defaults=['symbol', 'trade_date'],
+                       primary="symbol",
+                       **{"date": "trade_date"})
 BalanceSheet = SymbolQI(
     "lb.balanceSheet",
     defaults=['acct_rcv', 'ann_date', 'inventories', 'notes_rcv',
@@ -87,7 +90,7 @@ LB = [SecDividend, SecSusp, SecIndustry, SecAdjFactor, BalanceSheet, Income, Cas
 
 JZ = [InstrumentInfo, SecTradeCal]
 
-DBS = [SecDailyIndicator]
+DBS = {SecDailyIndicator.view: SecDailyIndicator}
 
 
 def col_readers(db, interpreters):
@@ -113,6 +116,11 @@ class JsetHandler(MongodbHandler):
 
         if factor:
             self.handlers["factor"] = FactorReader(self.client[factor])
+
+        for view, db in other.items():
+            interpreter = DBS.get(view, None)
+            if interpreter:
+                self.handlers[view] = DBReader(self.client[db], interpreter)
 
     def __getitem__(self, item):
         return self.handlers.get(item, None)

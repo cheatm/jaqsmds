@@ -306,7 +306,10 @@ class DBReader(object):
 
     def parse(self, filter, fields):
         query, projection = self.interpreter(filter, fields)
-        primary = query.pop(self.primary)
+        try:
+            primary = query.pop(self.primary)
+        except KeyError:
+            raise KeyError("Params: %s is missing" % self.primary)
         if not isinstance(primary, list):
             primary = [primary]
         filters = dict(self.create_filter(query))
