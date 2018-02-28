@@ -27,8 +27,10 @@ from datetime import datetime
 
 
 def str2date(string):
-    if string:
+    try:
         return datetime.strptime(string.replace("-", ""), "%Y%m%d")
+    except:
+        return None
 
 
 class FactorInterpreter(QueryInterpreter):
@@ -63,3 +65,11 @@ class FactorReader(DBReader):
         data["symbol"] = name
         data["datetime"] = data["datetime"].apply(date2str)
         return data
+
+
+if __name__ == '__main__':
+    from pymongo import MongoClient
+    result = FactorReader(
+        MongoClient("192.168.0.102")["factor"]
+    ).parse("symbol=000001.XSHE&start=20170101&end=99999999", 'LCAP,LFLO,ETP5,PE,PB,ROE')
+    print(result)

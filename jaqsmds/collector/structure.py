@@ -335,7 +335,3 @@ MFBondPortfolio = QueryStructure(
 def dct(s):
     return {"view": s.view, "compulsory": ", ".join(s.compulsory), "optional": ", ".join(s.optional),
             "fields": ",".join(s.fields)}
-
-
-if __name__ == '__main__':
-    print(InstrumentInfo())
