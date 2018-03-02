@@ -1,4 +1,4 @@
-from jaqsmds.server.repliers.utils import fill_field_filter, date2str, DBHandler, expand
+from jaqsmds.server.repliers.utils import fill_field_filter, DBHandler, expand
 from datetime import datetime
 import pandas as pd
 import logging
@@ -19,6 +19,10 @@ def check(symbol, begin_date, end_date):
         end_date = datetime(2020, 12, 31)
 
     return symbol, begin_date, end_date
+
+
+def date2int(date):
+    return date.year*10000+date.month*100+date.day
 
 
 PRICE = ["open", "high", "low", "close", "vwap"]
@@ -62,7 +66,7 @@ class DailyHandler(DBHandler):
         data = pd.DataFrame(list(col.find(f, p)))
         if len(data) == 0:
             return data
-        data["trade_date"] = data.pop("datetime").apply(date2str)
+        data["trade_date"] = data.pop("datetime").apply(date2int)
         data["freq"] = freq
         if "vwap" in p or (len(p) <= 1):
             try:
