@@ -89,7 +89,7 @@ class SecIndustryInterpreter(Qi):
 
     def catch(self, dct):
         i_s = dct.pop("industry_src", None)
-        if isinstance(i_s, str):
+        if i_s:
             yield "industry_src", i_s.lower()
 
         yield from super(SecIndustryInterpreter, self).catch(dct)
