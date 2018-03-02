@@ -332,6 +332,52 @@ MFBondPortfolio = QueryStructure(
 )
 
 
+FinIndicator = QueryStructure(
+    view="lb.finIndicator",
+    compulsory=[],
+    optional=["symbol", "start_date", "end_date"],
+    fields=["extraordinary", "deductedprofit", "grossmargin", "operateincome", "investincome", "stmnote_finexp",
+             "stm_is", "ebit_daily", "ebitda""fcff", "fcfe", "exinterestdebt_current", "exinterestdebt_noncurrent",
+             "interestdebt",
+             "netdebt", "tangibleasset", "workingcapital", "networkingcapital", "investcapital", "retainedearnings",
+             "eps_basic_daily",  # TODO eps_basic
+             "eps_diluted", "eps_diluted2", "bps", "ocfps", "grps", "orps", "surpluscapitalps", "surplusreserveps",
+             "undistributedps",
+             "retainedps", "cfps", "ebitps", "fcffps", "fcfeps", "netprofitmargin", "grossprofitmargin", "cogstosales",
+             "expensetosales", "profittogr", "saleexpensetogr", "adminexpensetogr", "finaexpensetogr", "impairtogr_ttm",
+             "gctogr", "optogr", "ebittogr", "roe", "roe_deducted", "roa2", "roa", "roic", "roe_yearly", "roa2_yearly",
+             "roe_avg",
+             "operateincometoebt", "investincometoebt", "nonoperateprofittoebt", "taxtoebt", "deductedprofittoprofit",
+             "salescashintoor",
+             "ocftoor", "ocftooperateincome", "capitalizedtoda", "debttoassets", "assetstoequity",
+             "dupont_assetstoequity",
+             "catoassets", "ncatoassets", "tangibleassetstoassets", "intdebttototalcap", "equitytototalcapital",
+             "currentdebttodebt",
+             "longdebtodebt", "current", "quick", "cashratio", "ocftoshortdebt", "debttoequity", "equitytodebt",
+             "equitytointerestdebt", "tangibleassettodebt", "tangassettointdebt", "tangibleassettonetdebt", "ocftodebt",
+             "ocftointerestdebt", "ocftonetdebt", "ebittointerest", "longdebttoworkingcapital", "ebitdatodebt",
+             "turndays",
+             "invturndays", "arturndays", "invturn", "arturn", "caturn", "faturn", "assetsturn", "roa_yearly",
+             "dupont_roa",
+             "s_stm_bs", "prefinexpense_opprofit", "nonopprofit", "optoebt", "noptoebt", "ocftoprofit", "cashtoliqdebt",
+             "cashtoliqdebtwithinterest", "optoliqdebt", "optodebt", "roic_yearly", "tot_faturn", "profittoop",
+             "qfa_operateincome",
+             "qfa_investincome", "qfa_deductedprofit", "qfa_eps", "qfa_netprofitmargin", "qfa_grossprofitmargin",
+             "qfa_expensetosales",
+             "qfa_profittogr", "qfa_saleexpensetogr", "qfa_adminexpensetogr", "qfa_finaexpensetogr",
+             "qfa_impairtogr_ttm",
+             "qfa_gctogr", "qfa_optogr", "qfa_roe", "qfa_roe_deducted", "qfa_roa", "qfa_operateincometoebt",
+             "qfa_investincometoebt",
+             "qfa_deductedprofittoprofit", "qfa_salescashintoor", "qfa_ocftosales", "qfa_ocftoor", "yoyeps_basic",
+             "yoyeps_diluted",
+             "yoyocfps", "yoyop", "yoyebt", "yoynetprofit", "yoynetprofit_deducted", "yoyocf", "yoyroe", "yoybps",
+             "yoyassets",
+             "yoyequity", "yoy_tr", "yoy_or", "qfa_yoygr", "qfa_cgrgr", "qfa_yoysales", "qfa_cgrsales", "qfa_yoyop",
+             "qfa_cgrop",
+             "qfa_yoyprofit", "qfa_cgrprofit", "qfa_yoynetprofit", "qfa_cgrnetprofit", "yoy_equity", "rd_expense",
+             "waa_roe"]
+)
+
 def dct(s):
     return {"view": s.view, "compulsory": ", ".join(s.compulsory), "optional": ", ".join(s.optional),
             "fields": ",".join(s.fields)}

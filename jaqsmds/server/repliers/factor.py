@@ -28,7 +28,7 @@ from datetime import datetime
 
 def str2date(string):
     try:
-        return datetime.strptime(string.replace("-", ""), "%Y%m%d")
+        return datetime.strptime(string.replace("-", ""), "%Y%m%d").replace(hour=15)
     except:
         return None
 

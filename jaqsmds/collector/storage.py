@@ -65,19 +65,3 @@ def fetch_remote(api):
     return api.query(**InstrumentInfo())
 
 
-if __name__ == '__main__':
-    client = MongoClient("192.168.0.102,192.168.0.101")
-
-    data = read(client.jz.instrumentInfo, None)
-    res = data.groupby(data.inst_type)["symbol"].agg(lambda s: len(s))
-    print(res)
-    # result=data.groupby(data.market)["name"].agg(lambda s: len(s))
-    # print(result)
-    # symbols = current_instrument(client.jz.instrumentInfo)
-    # api = DataApi()
-    # api.login("13823156147", "eyJhbGciOiJIUzI1NiJ9.eyJjcmVhdGVfdGltZSI6IjE1MTI3ODY3ODYxODMiLCJpc3MiOiJhdXRoMCIsImlkIjoiMTM4MjMxNTYxNDcifQ.Lt4orfuPoP5xVM_t3n4SdC7xwPNDoloHdvCAWU4JfYQ")
-    # data = api.query(**MFPortfolio(symbol="161911.SZ"))
-    # print(*data, sep="\n")
-    # direct_pull(client, api, IndexCons, index_code=symbols, 1start_date=0, end_date=99999999)
-    #
-
