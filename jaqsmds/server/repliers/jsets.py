@@ -94,10 +94,12 @@ class SecIndustryInterpreter(Qi):
 
         yield from super(SecIndustryInterpreter, self).catch(dct)
 
-SecIndustry = Qi("lb.secIndustry",
-                 defaults=['in_date', 'industry1_code', 'industry1_name', 'industry2_code',
-                           'industry2_name', 'industry3_code', 'industry3_name', 'industry4_code',
-                           'industry4_name', 'industry_src', 'out_date', 'symbol'])
+SecIndustry = SecIndustryInterpreter(
+    "lb.secIndustry",
+    defaults=['in_date', 'industry1_code', 'industry1_name', 'industry2_code',
+              'industry2_name', 'industry3_code', 'industry3_name', 'industry4_code',
+              'industry4_name', 'industry_src', 'out_date', 'symbol']
+)
 
 
 LB = [SecDividend, SecSusp, SecIndustry, SecAdjFactor, BalanceSheet, Income, CashFlow,
