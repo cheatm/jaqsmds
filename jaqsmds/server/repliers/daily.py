@@ -46,6 +46,7 @@ class DailyHandler(DBHandler):
                 ""
             )
             if len(adj):
+                adj["trade_date"] = adj["trade_date"].apply(int)
                 return adjust(data, adj, mode)
             else:
                 return data
