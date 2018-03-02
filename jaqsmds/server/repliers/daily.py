@@ -1,4 +1,4 @@
-from jaqsmds.server.repliers.utils import fill_field_filter, DBHandler, expand
+from jaqsmds.server.repliers.utils import fill_field_filter, DBHandler, expand, date2int
 from datetime import datetime
 import pandas as pd
 import logging
@@ -19,10 +19,6 @@ def check(symbol, begin_date, end_date):
         end_date = datetime(2020, 12, 31)
 
     return symbol, begin_date, end_date
-
-
-def date2int(date):
-    return date.year*10000+date.month*100+date.day
 
 
 PRICE = ["open", "high", "low", "close", "vwap"]

@@ -19,6 +19,10 @@ def date2str(t):
     return t.strftime("%Y%m%d")
 
 
+def date2int(date):
+    return date.year*10000+date.month*100+date.day
+
+
 def field_filter(string):
     dct = {s: 1 for s in string.replace(" ", "").split(",")}
     dct.pop("", None)

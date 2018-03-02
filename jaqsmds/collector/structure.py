@@ -139,7 +139,7 @@ SecDailyIndicator = QueryStructure(
     view="lb.secDailyIndicator",
     compulsory=['symbol'],
     optional=DATE_RANGE,
-    fields=['symbol', 'trade_date', 'total_mv', 'float_mv', 'pe', 'pb_new', 'pe_ttm',  'pcf_ocf',
+    fields=['symbol', 'trade_date', 'total_mv', 'float_mv', 'pe', 'pb', 'pe_ttm',  'pcf_ocf',
             'pcf_ocfttm', 'pcf_ncf', 'pcf_ncfttm', 'ps', 'ps_ttm',  'turnoverratio', 'freeturnover',
             'total_share', 'float_share', 'close', 'price_div_dps', 'free_share', 'profit_ttm', 'profit_lyr',
             'net_assets', 'cash_flows_oper_act_ttm', 'cash_flows_oper_act_lyr', 'operrev_ttm', 'operrev_lyr',

@@ -1,4 +1,4 @@
-from jaqsmds.server.repliers.utils import Jset3DReader, fill_field_filter, date2str, time_range_daily, \
+from jaqsmds.server.repliers.utils import Jset3DReader, fill_field_filter, date2int, time_range_daily, \
     QueryInterpreter, DBReader
 
 
@@ -63,13 +63,5 @@ class FactorReader(DBReader):
     def read(self, name, filters, projection):
         data = super(FactorReader, self).read(name, filters, projection)
         data["symbol"] = name
-        data["datetime"] = data["datetime"].apply(date2str)
+        data["datetime"] = data["datetime"].apply(date2int)
         return data
-
-
-if __name__ == '__main__':
-    from pymongo import MongoClient
-    result = FactorReader(
-        MongoClient("192.168.0.102")["factor"]
-    ).parse("symbol=000001.XSHE&start=20170101&end=99999999", 'LCAP,LFLO,ETP5,PE,PB,ROE')
-    print(result)
