@@ -15,10 +15,10 @@ SecDividend = Qi(
 SecAdjFactor = Qi("lb.secAdjFactor", defaults=['adjust_factor', 'symbol', 'trade_date'], **{"date": "trade_date"})
 SecSusp = Qi("lb.secSusp",
              defaults=['ann_date', 'resu_date', 'susp_date', 'susp_reason', 'symbol'], **{"date": "ann_date"})
-SecIndustry = Qi("lb.secIndustry",
-                 defaults=['in_date', 'industry1_code', 'industry1_name', 'industry2_code',
-                           'industry2_name', 'industry3_code', 'industry3_name', 'industry4_code',
-                           'industry4_name', 'industry_src', 'out_date', 'symbol'])
+# SecIndustry = Qi("lb.secIndustry",
+#                  defaults=['in_date', 'industry1_code', 'industry1_name', 'industry2_code',
+#                            'industry2_name', 'industry3_code', 'industry3_name', 'industry4_code',
+#                            'industry4_name', 'industry_src', 'out_date', 'symbol'])
 SecDailyIndicator = Qi("lb.secDailyIndicator",
                        defaults=['symbol', 'trade_date'],
                        primary="symbol",
@@ -83,6 +83,21 @@ class IndexConsInterpreter(Qi):
 
 IndexCons = IndexConsInterpreter("lb.indexCons", primary='index_code',
                                  defaults=['in_date', 'index_code', 'out_date', 'symbol'])
+
+
+class SecIndustryInterpreter(Qi):
+
+    def catch(self, dct):
+        i_s = dct.pop("industry_src", None)
+        if isinstance(i_s, str):
+            yield "industry_src", i_s.lower()
+
+        yield from super(SecIndustryInterpreter, self).catch(dct)
+
+SecIndustry = Qi("lb.secIndustry",
+                 defaults=['in_date', 'industry1_code', 'industry1_name', 'industry2_code',
+                           'industry2_name', 'industry3_code', 'industry3_name', 'industry4_code',
+                           'industry4_name', 'industry_src', 'out_date', 'symbol'])
 
 
 LB = [SecDividend, SecSusp, SecIndustry, SecAdjFactor, BalanceSheet, Income, CashFlow,
