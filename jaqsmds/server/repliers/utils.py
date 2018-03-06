@@ -242,7 +242,7 @@ class QueryInterpreter(object):
         single = {}
         for key, value in iter_filter(string):
             if "," in value:
-                yield key, value.split(",")
+                yield key, set(value.split(","))
             else:
                 single[key] = value
 
@@ -282,6 +282,8 @@ class ColReader(object):
                 if end:
                     _r["$lte"] = end
                 yield key, _r
+            elif isinstance(value, set):
+                yield key, {"$in": list(value)}
             else:
                 yield key, value
 
@@ -300,6 +302,8 @@ class ColReader(object):
         return pd.DataFrame(list(cursor))
 
 
+import six
+
 class DBReader(object):
 
     def __init__(self, db, interpreter):
@@ -314,7 +318,7 @@ class DBReader(object):
             primary = query.pop(self.primary)
         except KeyError:
             raise KeyError("Params: %s is missing" % self.primary)
-        if not isinstance(primary, list):
+        if isinstance(primary, six.string_types):
             primary = [primary]
         filters = dict(self.create_filter(query))
         return pd.concat(list(self._parse(primary, filters, projection)))
@@ -345,6 +349,8 @@ class DBReader(object):
                 if end:
                     _r["$lte"] = end
                 yield key, _r
+            elif isinstance(value, set):
+                yield key, {"$in": list(value)}
             else:
                 yield key, value
 
