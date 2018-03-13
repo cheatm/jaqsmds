@@ -65,12 +65,19 @@ class DailyFactorInterpreter(DailyAxisInterpreter):
     def _catch(self, name, dct):
         date = dct.pop(name, None)
         if date:
-            return datetime.strptime(date.replace("-", ""), "%Y%m%d").replace(hour=15)
+            return str2date(date)
 
     def axis2(self, a1):
-        a2 = set([s[:6] for s in  a1.pop(self.axis, [])])
+        a2 = set([s[:6] for s in a1.pop(self.axis, [])])
         a2.add(self.default)
         return a2
+
+
+def expand(code):
+    if code.startswith("6"):
+        return code + ".XSHG"
+    else:
+        return code + ".XSHE"
 
 
 class DailyFactorReader(DailyAxisReader):
@@ -79,6 +86,6 @@ class DailyFactorReader(DailyAxisReader):
         super(DailyFactorReader, self).__init__(db, DailyFactorInterpreter())
 
     def decorate(self, data):
-        data = super(DailyFactorReader, self).decorate(data)
+        data = super(DailyFactorReader, self).decorate(data.rename_axis(expand, 2))
         data[self.index] = data[self.index].apply(date2int)
         return data
