@@ -24,8 +24,7 @@ def server(conf=None, **kwargs):
         config.init_file(conf)
 
     # 通过命令行输入设置db映射
-    config.update(config.db_map, {"{}.query".format(key): catch_db(kwargs[key]) for key in ("jset", "jsd")})
-
+    config.update(config.db_map, {"{}.query".format(key): catch_db(kwargs.pop(key)) for key in ("jset", "jsd")})
     # 通过命令行输入配置
     for key, value in kwargs.items():
         if value is not None:

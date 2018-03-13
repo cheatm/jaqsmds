@@ -262,7 +262,54 @@ class QueryInterpreter(object):
         return fields
 
 
-class ColReader(object):
+class DailyAxisInterpreter(object):
+
+    def __init__(self, axis, ranges=None, default=None):
+        self.axis = axis
+        self.default = default
+        self.ranges = ranges if isinstance(ranges, dict) else dict()
+
+    def __call__(self, filters, fields):
+        a0 = self.axis0(fields)
+        a1 = dict(self.axis1(filters))
+        a2 = self.axis2(a1)
+
+        return a0, a1, a2
+
+    def axis0(self, string):
+        return string.replace(' ', "").split(",")
+
+    def axis1(self, string):
+        single = {}
+        for key, value in iter_filter(string):
+            if "," in value:
+                yield key, set(value.split(","))
+            else:
+                single[key] = value
+
+        yield from self.catch(single)
+        yield from single.items()
+
+    def axis2(self, a1):
+        a2 = a1.pop(self.axis, set())
+        if self.default:
+            a2.add(self.default)
+        return a2
+
+    def catch(self, dct):
+        for key, value in self.ranges.items():
+            start = dct.pop("start_%s" % key, None)
+            end = dct.pop("end_%s" % key, None)
+            if start or end:
+                yield value, (start, end)
+
+class BaseReader(object):
+
+    def parse(self, filter, fields):
+        raise NotImplementedError("Should implement method: parse")
+
+
+class ColReader(BaseReader):
 
     def __init__(self, collection, interpreter):
         self.collection = collection
@@ -304,7 +351,8 @@ class ColReader(object):
 
 import six
 
-class DBReader(object):
+
+class DBReader(BaseReader):
 
     def __init__(self, db, interpreter):
         self.db = db
@@ -358,3 +406,54 @@ class DBReader(object):
             yield "$or", ands[0]
         elif len(ands) > 1:
             yield "$and", ands
+
+
+class DailyAxisReader(BaseReader):
+
+    def __init__(self, db, dai, index="datetime"):
+        self.db = db
+        self.dai = dai
+        self.index = index
+
+    def parse(self, filter, fields):
+        a0, a1, a2 = self.dai(filter, fields)
+        filters = dict(self.create_filters(a1))
+        projection = dict.fromkeys(a2, 1)
+        projection[self.index] = 1
+        projection['_id'] = 0
+
+        data = pd.Panel.from_dict(dict(self.iter_read(a0, filters, projection)))
+        return self.decorate(data)
+
+    def decorate(self, data):
+        data.minor_axis.name = self.dai.axis
+        frame = data.transpose(0, 2, 1).to_frame(False)
+        mi = frame.index.to_frame()
+        frame[mi.columns] = mi
+        return frame
+
+    @staticmethod
+    def create_filters(dct):
+        for key, value in dct.items():
+            if isinstance(value, set):
+                yield key, {"$in": list(value)}
+            elif isinstance(value, tuple):
+                ranges = {}
+                if value[0]:
+                    ranges["$gte"] = value[0]
+                if value[1]:
+                    ranges["$lte"] = value[1]
+                if len(ranges):
+                    yield key, ranges
+            else:
+                yield key, value
+
+    def iter_read(self, names, filters, fields):
+        for name in names:
+            try:
+                yield name, self.read(name, filters, fields)
+            except Exception as e:
+                logging.error("factor | %s | %s", name, e)
+
+    def read(self, name, filters, fields):
+        return pd.DataFrame(list(self.db[name].find(filters, fields))).set_index(self.index)

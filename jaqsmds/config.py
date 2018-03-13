@@ -5,7 +5,7 @@ import os
 db_map = {
     "jset.query": {"lb": "lb",
                    "jz": "jz",
-                   "factor": "factor",
+                   "factor": "factors",
                    "lb.secDailyIndicator": "SecDailyIndicator",
                    "lb.mfNav": "MFNav",
                    "lb.mfDividend": "MFDividend",

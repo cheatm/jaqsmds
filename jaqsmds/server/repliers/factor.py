@@ -1,5 +1,4 @@
-from jaqsmds.server.repliers.utils import Jset3DReader, fill_field_filter, date2int, time_range_daily, \
-    QueryInterpreter, DBReader
+from jaqsmds.server.repliers.utils import date2int, QueryInterpreter, DBReader, DailyAxisInterpreter, DailyAxisReader
 from datetime import datetime
 
 
@@ -8,6 +7,17 @@ def str2date(string):
         return datetime.strptime(string.replace("-", ""), "%Y%m%d").replace(hour=15)
     except:
         return None
+
+
+def timer(func):
+    def wrapper(*args, **kwargs):
+        start = datetime.now()
+        result = func(*args, **kwargs)
+        expiry = datetime.now() - start
+        print("{}: {}".format(func.__name__, expiry))
+        return result
+
+    return wrapper
 
 
 class FactorInterpreter(QueryInterpreter):
@@ -41,4 +51,34 @@ class FactorReader(DBReader):
         data = super(FactorReader, self).read(name, filters, projection)
         data["symbol"] = name
         data["datetime"] = data["datetime"].apply(date2int)
+        return data
+
+
+class DailyFactorInterpreter(DailyAxisInterpreter):
+
+    def __init__(self):
+        super(DailyFactorInterpreter, self).__init__("symbol", default="datetime")
+
+    def catch(self, dct):
+        yield self.default, (self._catch("start", dct), self._catch("end", dct))
+
+    def _catch(self, name, dct):
+        date = dct.pop(name, None)
+        if date:
+            return datetime.strptime(date.replace("-", ""), "%Y%m%d").replace(hour=15)
+
+    def axis2(self, a1):
+        a2 = set([s[:6] for s in  a1.pop(self.axis, [])])
+        a2.add(self.default)
+        return a2
+
+
+class DailyFactorReader(DailyAxisReader):
+
+    def __init__(self, db):
+        super(DailyFactorReader, self).__init__(db, DailyFactorInterpreter())
+
+    def decorate(self, data):
+        data = super(DailyFactorReader, self).decorate(data)
+        data[self.index] = data[self.index].apply(date2int)
         return data

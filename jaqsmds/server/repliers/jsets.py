@@ -1,5 +1,5 @@
 from jaqsmds.server.repliers.utils import QueryInterpreter as Qi, MongodbHandler, ColReader, DBReader
-from jaqsmds.server.repliers.factor import FactorReader
+from jaqsmds.server.repliers.factor import FactorReader, DailyFactorReader
 from functools import partial
 
 SymbolQI = partial(Qi, primary="symbol")
@@ -132,7 +132,8 @@ class JsetHandler(MongodbHandler):
             self.handlers.update(col_readers(self.client[jz], JZ))
 
         if factor:
-            self.handlers["factor"] = FactorReader(self.client[factor])
+            # self.handlers["factor"] = FactorReader(self.client[factor])
+            self.handlers["factor"] = DailyFactorReader(self.client[factor])
 
         for view, db in other.items():
             interpreter = DBS.get(view, None)

@@ -14,7 +14,8 @@ class Replier(object):
         message = _unpack_msgpack_snappy(request)
         try:
             reply = self.on_message(message)
-        except:
+        except Exception as e:
+            logging.error("message | %s | %s", message, e)
             reply = self.on_message_error(message)
 
         return _pack_msgpack_snappy(reply)
