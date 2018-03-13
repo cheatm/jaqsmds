@@ -1,4 +1,4 @@
-from jaqsmds.server.repliers.utils import QueryInterpreter as Qi, MongodbHandler, ColReader, DBReader
+from jaqsmds.server.repliers.utils import QueryInterpreter as Qi, MongodbHandler, ColReader, DBReader, BaseReader
 from jaqsmds.server.repliers.factor import FactorReader, DailyFactorReader
 from functools import partial
 
@@ -101,6 +101,8 @@ SecIndustry = SecIndustryInterpreter(
               'industry4_name', 'industry_src', 'out_date', 'symbol']
 )
 
+ViewFields = Qi("jz.viewFields")
+
 
 LB = [SecDividend, SecSusp, SecIndustry, SecAdjFactor, BalanceSheet, Income, CashFlow,
       ProfitExpress, SecRestricted, IndexCons, IndexWeightRange, FinIndicator]
@@ -130,6 +132,7 @@ class JsetHandler(MongodbHandler):
 
         if jz:
             self.handlers.update(col_readers(self.client[jz], JZ))
+            self.handlers[ViewFields.view] = ViewFieldsReader(self.client[jz]["viewFields"])
 
         if factor:
             # self.handlers["factor"] = FactorReader(self.client[factor])
@@ -149,3 +152,21 @@ class JsetHandler(MongodbHandler):
             return parser.parse(filter, fields)
         else:
             raise ValueError("Invalid view: %s" % view)
+
+
+class ViewFieldsReader(ColReader):
+
+    _view = "view"
+    _fields = "fields"
+
+    def __init__(self, collection):
+        super(ViewFieldsReader, self).__init__(collection, ViewFields)
+
+    def parse(self, filter, fields):
+        query, projections = self.interpreter(filter, fields)
+        filters = dict(self.create_filter(query))
+        cursor = self.collection.find(filters, projections)
+        if self.interpreter.primary:
+            cursor.hint([(self.interpreter.primary, 1)])
+
+        return {doc[self._view]: doc[self._fields] for doc in list(cursor)}

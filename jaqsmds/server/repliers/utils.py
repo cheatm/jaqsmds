@@ -82,7 +82,8 @@ class MongodbHandler(object):
         logging.warning("Message | %s", dct)
         try:
             result = self.receive(**dct.pop("params"))
-            result = {name: item.tolist() for name, item in result.items()}
+            if isinstance(result, pd.DataFrame):
+                result = result.to_dict("list")
         except Exception as e:
             dct["error"] = {"error": -1, "message": str(e)}
             dct["result"] = {}
