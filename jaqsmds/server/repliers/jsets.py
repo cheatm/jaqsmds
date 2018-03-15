@@ -1,5 +1,5 @@
 from jaqsmds.server.repliers.utils import QueryInterpreter as Qi, MongodbHandler, ColReader, DBReader, BaseReader
-from jaqsmds.server.repliers.factor import FactorReader, DailyFactorReader
+from jaqsmds.server.repliers.factor import DailyFactorReader
 from functools import partial
 
 SymbolQI = partial(Qi, primary="symbol")

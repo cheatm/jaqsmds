@@ -1,9 +1,13 @@
 import logging
 import os
 
+JSET = "jset.query"
+JSD = "jsd.query"
+JSI = "jsi.query"
+
 
 db_map = {
-    "jset.query": {"lb": "lb",
+    JSET: {"lb": "lb",
                    "jz": "jz",
                    "factor": "factors",
                    "lb.secDailyIndicator": "SecDailyIndicator",
@@ -11,7 +15,8 @@ db_map = {
                    "lb.mfDividend": "MFDividend",
                    "lb.mfPortfolio": "MFPortfolio",
                    "lb.mfBondPortfolio": "MFBondPortfolio"},
-    "jsd.query": "Stock_D"
+    JSD: "Stock_D",
+    JSI: "Stock_1M"
 }
 
 
