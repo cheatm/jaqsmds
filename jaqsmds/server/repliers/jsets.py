@@ -59,6 +59,8 @@ IndexWeightRange = Qi("lb.indexWeightRange",
 FinIndicator = SymbolQI("lb.finIndicator",
                         defaults=['ann_date', 'bps', 'report_date', 'roa', 'roe', 'symbol'],
                         **{"date": "ann_date"})
+ApiList = Qi("help.apiList")
+ApiParam = Qi("help.apiParam")
 
 
 class SecTradeCalInterpreter(Qi):
@@ -107,7 +109,7 @@ ViewFields = Qi("jz.viewFields")
 LB = [SecDividend, SecSusp, SecIndustry, SecAdjFactor, BalanceSheet, Income, CashFlow,
       ProfitExpress, SecRestricted, IndexCons, IndexWeightRange, FinIndicator]
 
-JZ = [InstrumentInfo, SecTradeCal]
+JZ = [InstrumentInfo, SecTradeCal, ApiList, ApiParam]
 
 DBS = {SecDailyIndicator.view: SecDailyIndicator}
 
@@ -115,7 +117,7 @@ DBS = {SecDailyIndicator.view: SecDailyIndicator}
 def col_readers(db, interpreters):
     dct = {}
     for interpreter in interpreters:
-        collection = db[interpreter.view[3:]]
+        collection = db[interpreter.view.split(".", 1)[1]]
         dct[interpreter.view] = ColReader(collection, interpreter)
 
     return dct

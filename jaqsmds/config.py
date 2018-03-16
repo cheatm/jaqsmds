@@ -8,13 +8,13 @@ JSI = "jsi.query"
 
 db_map = {
     JSET: {"lb": "lb",
-                   "jz": "jz",
-                   "factor": "factors",
-                   "lb.secDailyIndicator": "SecDailyIndicator",
-                   "lb.mfNav": "MFNav",
-                   "lb.mfDividend": "MFDividend",
-                   "lb.mfPortfolio": "MFPortfolio",
-                   "lb.mfBondPortfolio": "MFBondPortfolio"},
+           "jz": "jz",
+           "factor": "factors",
+           "lb.secDailyIndicator": "SecDailyIndicator",
+           "lb.mfNav": "MFNav",
+           "lb.mfDividend": "MFDividend",
+           "lb.mfPortfolio": "MFPortfolio",
+           "lb.mfBondPortfolio": "MFBondPortfolio"},
     JSD: "Stock_D",
     JSI: "Stock_1M"
 }
