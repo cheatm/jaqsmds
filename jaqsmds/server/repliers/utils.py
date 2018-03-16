@@ -420,9 +420,7 @@ class DailyAxisReader(BaseReader):
         a0, a1, a2 = self.dai(filter, fields)
         filters = dict(self.create_filters(a1))
         projection = dict.fromkeys(a2, 1)
-        projection[self.index] = 1
         projection['_id'] = 0
-
         data = pd.Panel.from_dict(dict(self.iter_read(a0, filters, projection)))
         return self.decorate(data)
 

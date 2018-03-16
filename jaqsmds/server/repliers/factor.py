@@ -9,17 +9,6 @@ def str2date(string):
         return None
 
 
-def timer(func):
-    def wrapper(*args, **kwargs):
-        start = datetime.now()
-        result = func(*args, **kwargs)
-        expiry = datetime.now() - start
-        print("{}: {}".format(func.__name__, expiry))
-        return result
-
-    return wrapper
-
-
 class FactorInterpreter(QueryInterpreter):
 
     def __init__(self):
@@ -53,6 +42,8 @@ class FactorReader(DBReader):
         data["datetime"] = data["datetime"].apply(date2int)
         return data
 
+import six
+
 
 class DailyFactorInterpreter(DailyAxisInterpreter):
 
@@ -68,8 +59,13 @@ class DailyFactorInterpreter(DailyAxisInterpreter):
             return str2date(date)
 
     def axis2(self, a1):
-        a2 = set([s[:6] for s in a1.pop(self.axis, [])])
-        a2.add(self.default)
+        symbol = a1.pop(self.axis, [])
+        if isinstance(symbol, six.string_types):
+            a2 = {symbol[:6]}
+        else:
+            a2 = set([s[:6] for s in symbol])
+        if len(a2) != 0:
+            a2.add(self.default)
         return a2
 
 
@@ -89,3 +85,6 @@ class DailyFactorReader(DailyAxisReader):
         data = super(DailyFactorReader, self).decorate(data.rename_axis(expand, 2))
         data[self.index] = data[self.index].apply(date2int)
         return data
+    
+    def read(self, name, filters, fields):
+        return super(DailyFactorReader, self).read(name, filters, fields)
