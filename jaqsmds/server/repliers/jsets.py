@@ -61,6 +61,7 @@ FinIndicator = SymbolQI("lb.finIndicator",
                         **{"date": "ann_date"})
 ApiList = Qi("help.apiList")
 ApiParam = Qi("help.apiParam")
+WindFinance = SymbolQI("lb.windFinance", **{"date": "index"})
 
 
 class SecTradeCalInterpreter(Qi):
@@ -107,7 +108,7 @@ ViewFields = Qi("jz.viewFields")
 
 
 LB = [SecDividend, SecSusp, SecIndustry, SecAdjFactor, BalanceSheet, Income, CashFlow,
-      ProfitExpress, SecRestricted, IndexCons, IndexWeightRange, FinIndicator]
+      ProfitExpress, SecRestricted, IndexCons, IndexWeightRange, FinIndicator, WindFinance]
 
 JZ = [InstrumentInfo, SecTradeCal, ApiList, ApiParam]
 
