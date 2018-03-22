@@ -4,6 +4,15 @@ import pandas as pd
 import logging
 
 
+def timer(func):
+    def wrapper(*args, **kwargs):
+        start = datetime.now()
+        r = func(*args, **kwargs)
+        print(datetime.now()-start)
+        return r
+    return wrapper
+
+
 def check(symbol, begin_date, end_date):
     if len(symbol) == 0:
         raise ValueError("symbol is invalid")
@@ -26,13 +35,37 @@ PRICE = ["open", "high", "low", "close", "vwap"]
 
 class DailyHandler(DBHandler):
 
-    def __init__(self, client, db, adj=None):
+    def __init__(self, client, db, adj=None, trade_cal='jz.secTradeCal'):
         super(DailyHandler, self).__init__(client, db, "daily")
         self.adj = adj
         self.empty = {}
+        self._trade_cal_info = trade_cal
+        self._trade_cal = None
+
+    def get_trade_cal(self, start, end):
+        if self._trade_cal:
+            return self._get_trade_cal(start, end)
+        else:
+            self.init_trade_cal()
+            return self._get_trade_cal(start, end)
+
+    def _get_trade_cal(self, start, end):
+        sliced = slice(*self._trade_cal.slice_locs(start, end, kind="loc"))
+        return self._trade_cal[sliced]
+
+    def init_trade_cal(self):
+        db, name = self._trade_cal_info.split(".", 1)
+        col = self.client[db][name]
+        trade_cal = pd.DataFrame(
+            list(col.find(None, {"istradeday": 1, "trade_date": 1, "_id": 0}))
+        ).set_index("trade_date")
+        self._trade_cal = trade_cal[trade_cal["istradeday"]=="T"].sort_index().index
 
     def receive(self, symbol, begin_date, end_date, **kwargs):
-        data = super(DailyHandler, self).receive(symbol=symbol, begin_date=begin_date, end_date=end_date, **kwargs)
+        data = super(DailyHandler, self).receive(symbol=symbol,
+                                                 begin_date=begin_date,
+                                                 end_date=end_date,
+                                                 **kwargs)
         mode = kwargs.get("adjust_mode", "none")
         if mode == "none":
             return data
@@ -55,26 +88,43 @@ class DailyHandler(DBHandler):
         if "vwap" in p:
             p["volume"] = 1
             p["turnover"] = 1
-        return symbols, (f, p, freq), self.empty
+        trade_days = self.get_trade_cal(date2int(begin_date), date2int(end_date))
+        return symbols, (f, p, freq, trade_days), self.empty
 
-    def read_one(self, symbol, f, p, freq, **kwargs):
+    def read_one(self, symbol, f, p, freq, trade_days, **kwargs):
         code = symbol[:6]
         col = self.db[expand(symbol)]
         data = pd.DataFrame(list(col.find(f, p)))
+        data.sort_index(inplace=True)
         if len(data) == 0:
             return data
-        data["trade_date"] = data.pop("datetime").apply(date2int)
-        data["freq"] = freq
+        data = data.set_index("datetime").rename_axis(date2int)
         if "vwap" in p or (len(p) <= 1):
             try:
                 data["vwap"] = (data["turnover"] / data["volume"]).round(2)
             except Exception as e:
                 logging.error("daily| %s | %s", symbol, e)
         data["trade_status"] = "交易"
+        data = pd.DataFrame(data, trade_days)
+        data["trade_status"].fillna("停牌", inplace=True)
+        fill_suspend(data)
         data["symbol"] = symbol
         data["code"] = code
+        data["freq"] = freq
+        data['trade_date'] = data.index
         return data
 
+
+def fill_suspend(data):
+    for name in ["turnover", "volume", "high", "low", "open", "vwap"]:
+        if name in data.columns:
+            data[name].fillna(0, inplace=True)
+
+    if "close" in data.columns:
+        data["close"].ffill(inplace=True)
+        data["close"].bfill(inplace=True)
+
+    return data
 
 def reset_adj(adj, index):
     try:

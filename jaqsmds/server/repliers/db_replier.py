@@ -26,16 +26,12 @@ class DBReplier(RegularReplier):
                 self.methods[method] = handler.handle
 
     def init_jsd(self, db):
-        handler = DailyHandler(self.client, db, self.handlers[JSET]["lb.secAdjFactor"])
-        # self.handlers[JSD] = handler
-        # self.methods[JSD] = handler.handle
-        return handler
+        jz = self.db_map.get(JSET, {}).get("jz", "jz")
+        trade_cal = "%s.secTradeCal" % jz
+        return DailyHandler(self.client, db, self.handlers[JSET]["lb.secAdjFactor"], trade_cal)
 
     def init_jset(self, dbs):
-        handler = JsetHandler(self.client, **dbs)
-        # self.handlers[JSET] = handler
-        # self.methods[JSET] = handler.handle
-        return handler
+        return JsetHandler(self.client, **dbs)
 
     def init_jsi(self, db):
         return JsiHandler(self.client, db)
