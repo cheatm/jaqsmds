@@ -88,7 +88,11 @@ class DailyHandler(DBHandler):
         if "vwap" in p:
             p["volume"] = 1
             p["turnover"] = 1
-        trade_days = self.get_trade_cal(date2int(begin_date), date2int(end_date))
+        try:
+            trade_days = self.get_trade_cal(date2int(begin_date), date2int(end_date))
+        except:
+            self.init_trade_cal()
+            trade_days = self.get_trade_cal(date2int(begin_date), date2int(end_date))
         return symbols, (f, p, freq, trade_days), self.empty
 
     def read_one(self, symbol, f, p, freq, trade_days, **kwargs):
