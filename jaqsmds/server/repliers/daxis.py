@@ -1,4 +1,4 @@
-from jaqsmds.server.repliers.utils import date2int, QueryInterpreter, DBReader, DailyAxisInterpreter, DailyAxisReader
+from jaqsmds.server.repliers.utils import date2int, QueryInterpreter, DBReader, DailyAxisInterpreter, RenameAxisReader
 from datetime import datetime
 
 
@@ -64,8 +64,7 @@ class DailyFactorInterpreter(DailyAxisInterpreter):
             a2 = {symbol[:6]}
         else:
             a2 = set([s[:6] for s in symbol])
-        if len(a2) != 0:
-            a2.add(self.default)
+
         return a2
 
 
@@ -76,15 +75,36 @@ def expand(code):
         return code + ".XSHE"
 
 
-class DailyFactorReader(DailyAxisReader):
+class DailyFactorReader(RenameAxisReader):
 
     def __init__(self, db):
         super(DailyFactorReader, self).__init__(db, DailyFactorInterpreter())
 
     def decorate(self, data):
-        data = super(DailyFactorReader, self).decorate(data.rename_axis(expand, 2))
+        data = super(DailyFactorReader, self).decorate(data)
         data[self.index] = data[self.index].apply(date2int)
         return data
-    
-    def read(self, name, filters, fields):
-        return super(DailyFactorReader, self).read(name, filters, fields)
+
+    def rename(self, name):
+        return name[:6]
+
+    def recover(self, name):
+        if name.startswith("6"):
+            return name + ".XSHG"
+        else:
+            return name + ".XSHE"
+
+
+class IndicatorReader(RenameAxisReader):
+
+    def __init__(self, db):
+        super(IndicatorReader, self).__init__(db, DailyAxisInterpreter("symbol", {"date": "trade_date"}), "trade_date")
+
+    def rename(self, name):
+        return name[:6]
+
+    def recover(self, name):
+        if name.startswith("6"):
+            return name + ".SH"
+        else:
+            return name + ".SZ"

@@ -1,6 +1,7 @@
 from datetime import datetime
 from collections import Iterable
 import pandas as pd
+import traceback
 import logging
 
 
@@ -87,7 +88,7 @@ class MongodbHandler(object):
         except Exception as e:
             dct["error"] = {"error": -1, "message": str(e)}
             dct["result"] = {}
-            logging.error('handler | %s', e)
+            logging.error('handler | %s', traceback.format_exc(5))
         else:
             dct["result"] = result
             no_error(dct)
@@ -119,7 +120,7 @@ class DBHandler(MongodbHandler):
             try:
                 yield self.read_one(name, *args, **kwargs)
             except Exception as e:
-                logging.error(self.tag, name, e)
+                logging.error(self.tag, name, traceback.format_exc(5))
 
     def read_one(self, name, *args, **kwargs):
         raise NotImplementedError("func: _read should be implemented.")
@@ -211,7 +212,7 @@ class Jset3DReader(JsetReaderInterface):
             try:
                 yield self._read(symbol, f, p)
             except Exception as e:
-                logging.error("%s | %s | %s", self.view, symbol, e)
+                logging.error("%s | %s | %s", self.view, symbol, traceback.format_exc(5))
 
     def _read(self, symbol, f, p):
         return pd.DataFrame(list(self.db[symbol].find(f, p)))
@@ -293,8 +294,10 @@ class DailyAxisInterpreter(object):
 
     def axis2(self, a1):
         a2 = a1.pop(self.axis, set())
-        if self.default:
-            a2.add(self.default)
+        if isinstance(a2, six.string_types):
+            a2 = {a2}
+        elif not isinstance(a2, set):
+            a2 = set(a2)
         return a2
 
     def catch(self, dct):
@@ -303,6 +306,7 @@ class DailyAxisInterpreter(object):
             end = dct.pop("end_%s" % key, None)
             if start or end:
                 yield value, (start, end)
+
 
 class BaseReader(object):
 
@@ -377,7 +381,7 @@ class DBReader(BaseReader):
             try:
                 yield self.read(name, filters, projection)
             except Exception as e:
-                logging.error("%s | %s | %s", self.view, name, e)
+                logging.error("%s | %s | %s", self.view, name, traceback.format_exc(5))
 
     def read(self, name, filters, projection):
         collection = self.db[name]
@@ -411,22 +415,30 @@ class DBReader(BaseReader):
 
 class DailyAxisReader(BaseReader):
 
-    def __init__(self, db, dai, index="datetime"):
+    def __init__(self, db, dai, index="datetime", view="FieldReader"):
         self.db = db
         self.dai = dai
         self.index = index
+        self.view = view
 
     def parse(self, filter, fields):
         a0, a1, a2 = self.dai(filter, fields)
         filters = dict(self.create_filters(a1))
-        projection = dict.fromkeys(a2, 1)
-        projection['_id'] = 0
+        projection = self.field2prj(a2)
         data = pd.Panel.from_dict(dict(self.iter_read(a0, filters, projection)))
         return self.decorate(data)
+
+    def field2prj(self, axis):
+        projection = dict.fromkeys(axis, 1)
+        projection['_id'] = 0
+        if len(projection) > 1:
+            projection[self.index] = 1
+        return projection
 
     def decorate(self, data):
         data.minor_axis.name = self.dai.axis
         frame = data.transpose(0, 2, 1).to_frame(False)
+        frame.dropna(how="all", inplace=True)
         mi = frame.index.to_frame()
         frame[mi.columns] = mi
         return frame
@@ -452,7 +464,26 @@ class DailyAxisReader(BaseReader):
             try:
                 yield name, self.read(name, filters, fields)
             except Exception as e:
-                logging.error("factor | %s | %s", name, e)
+                logging.error("%s | %s | %s", self.view, name, traceback.format_exc(5))
 
     def read(self, name, filters, fields):
-        return pd.DataFrame(list(self.db[name].find(filters, fields))).set_index(self.index)
+        l = list(self.db[name].find(filters, fields))
+        if len(l):
+            return pd.DataFrame(l).set_index(self.index)
+        else:
+            raise ValueError("Empty Data")
+
+
+class RenameAxisReader(DailyAxisReader):
+
+    def field2prj(self, axis):
+        return super(RenameAxisReader, self).field2prj([self.rename(name) for name in axis])
+
+    def read(self, name, filters, fields):
+        return super(RenameAxisReader, self).read(name, filters, fields).rename_axis(self.recover, 1)
+
+    def rename(self, name):
+        return name
+
+    def recover(self, name):
+        return name

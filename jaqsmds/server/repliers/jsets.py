@@ -1,5 +1,5 @@
-from jaqsmds.server.repliers.utils import QueryInterpreter as Qi, MongodbHandler, ColReader, DBReader, BaseReader
-from jaqsmds.server.repliers.factor import DailyFactorReader
+from jaqsmds.server.repliers.utils import QueryInterpreter as Qi, MongodbHandler, ColReader, DBReader
+from jaqsmds.server.repliers.daxis import DailyFactorReader, IndicatorReader
 from functools import partial
 
 SymbolQI = partial(Qi, primary="symbol")
@@ -112,7 +112,12 @@ LB = [SecDividend, SecSusp, SecIndustry, SecAdjFactor, BalanceSheet, Income, Cas
 
 JZ = [InstrumentInfo, SecTradeCal, ApiList, ApiParam]
 
-DBS = {SecDailyIndicator.view: SecDailyIndicator}
+# DBS = {SecDailyIndicator.view: SecDailyIndicator}
+
+DAILY_AXIS_READER = {
+    "factor": DailyFactorReader,
+    "lb.secDailyIndicator": IndicatorReader
+}
 
 
 def col_readers(db, interpreters):
@@ -126,7 +131,7 @@ def col_readers(db, interpreters):
 
 class JsetHandler(MongodbHandler):
 
-    def __init__(self, client, lb=None, jz=None, factor=None, **other):
+    def __init__(self, client, lb=None, jz=None, **other):
         super(JsetHandler, self).__init__(client)
         self.handlers = {}
 
@@ -137,14 +142,19 @@ class JsetHandler(MongodbHandler):
             self.handlers.update(col_readers(self.client[jz], JZ))
             self.handlers[ViewFields.view] = ViewFieldsReader(self.client[jz]["viewFields"])
 
-        if factor:
-            # self.handlers["factor"] = FactorReader(self.client[factor])
-            self.handlers["factor"] = DailyFactorReader(self.client[factor])
+        # if factor:
+        #     # self.handlers["factor"] = FactorReader(self.client[factor])
+        #     self.handlers["factor"] = DailyFactorReader(self.client[factor])
 
         for view, db in other.items():
-            interpreter = DBS.get(view, None)
-            if interpreter:
-                self.handlers[view] = DBReader(self.client[db], interpreter)
+            # interpreter = DBS.get(view, None)
+            # if interpreter:
+            #     self.handlers[view] = DBReader(self.client[db], interpreter)
+
+            Reader = DAILY_AXIS_READER.get(view, None)
+            if Reader is not None:
+                self.handlers[view] = Reader(self.client[db])
+
 
     def __getitem__(self, item):
         return self.handlers.get(item, None)
