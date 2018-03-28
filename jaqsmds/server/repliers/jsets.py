@@ -1,4 +1,4 @@
-from jaqsmds.server.repliers.utils import QueryInterpreter as Qi, MongodbHandler, ColReader, DBReader
+from jaqsmds.server.repliers.utils import QueryInterpreter as Qi, MongodbHandler, ColReader
 from jaqsmds.server.repliers.daxis import DailyFactorReader, IndicatorReader
 from functools import partial
 
@@ -14,11 +14,8 @@ SecDividend = Qi(
 )
 SecAdjFactor = Qi("lb.secAdjFactor", defaults=['adjust_factor', 'symbol', 'trade_date'], **{"date": "trade_date"})
 SecSusp = Qi("lb.secSusp",
-             defaults=['ann_date', 'resu_date', 'susp_date', 'susp_reason', 'symbol'], **{"date": "ann_date"})
-# SecIndustry = Qi("lb.secIndustry",
-#                  defaults=['in_date', 'industry1_code', 'industry1_name', 'industry2_code',
-#                            'industry2_name', 'industry3_code', 'industry3_name', 'industry4_code',
-#                            'industry4_name', 'industry_src', 'out_date', 'symbol'])
+             defaults=['ann_date', 'resu_date', 'susp_date', 'susp_reason', 'symbol'],
+             **{"date": "date"})
 SecDailyIndicator = Qi("lb.secDailyIndicator",
                        defaults=['symbol', 'trade_date'],
                        primary="symbol",
@@ -107,7 +104,7 @@ SecIndustry = SecIndustryInterpreter(
 ViewFields = Qi("jz.viewFields")
 
 
-LB = [SecDividend, SecSusp, SecIndustry, SecAdjFactor, BalanceSheet, Income, CashFlow,
+LB = [SecDividend, SecIndustry, SecAdjFactor, BalanceSheet, Income, CashFlow,
       ProfitExpress, SecRestricted, IndexCons, IndexWeightRange, FinIndicator, WindFinance]
 
 JZ = [InstrumentInfo, SecTradeCal, ApiList, ApiParam]
@@ -137,20 +134,13 @@ class JsetHandler(MongodbHandler):
 
         if lb:
             self.handlers.update(col_readers(self.client[lb], LB))
+            self.handlers[SecSusp.view] = SecSuspReader(self.client[lb]["secSusp"])
 
         if jz:
             self.handlers.update(col_readers(self.client[jz], JZ))
             self.handlers[ViewFields.view] = ViewFieldsReader(self.client[jz]["viewFields"])
 
-        # if factor:
-        #     # self.handlers["factor"] = FactorReader(self.client[factor])
-        #     self.handlers["factor"] = DailyFactorReader(self.client[factor])
-
         for view, db in other.items():
-            # interpreter = DBS.get(view, None)
-            # if interpreter:
-            #     self.handlers[view] = DBReader(self.client[db], interpreter)
-
             Reader = DAILY_AXIS_READER.get(view, None)
             if Reader is not None:
                 self.handlers[view] = Reader(self.client[db])
@@ -183,3 +173,29 @@ class ViewFieldsReader(ColReader):
             cursor.hint([(self.interpreter.primary, 1)])
 
         return {doc[self._view]: doc[self._fields] for doc in list(cursor)}
+
+
+import six
+
+
+class SecSuspReader(ColReader):
+
+    def __init__(self, collection):
+        super(SecSuspReader, self).__init__(collection, SecSusp)
+
+    @staticmethod
+    def create_filter(dct):
+        filters = {}
+        symbol = dct.get("symbol", [])
+        if isinstance(symbol, six.string_types):
+            filters["symbol"] = symbol
+        else:
+            if len(symbol):
+                filters["symbol"] = {"$in": list(symbol)}
+
+        start, end = dct.get("date", (None, None))
+        if start:
+            filters["$or"] = [{"resu_date": {"$gte": start}}, {"resu_date": ""}]
+        if end:
+            filters["susp_date"] = {"$lte": end}
+        return filters

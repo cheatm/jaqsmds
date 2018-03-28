@@ -121,7 +121,7 @@ SecIndustry = QueryStructure(
     fields=['symbol', 'industry_src', 'in_date', 'out_date', 'is_new',
             'industry1_code', 'industry1_name', 'industry2_code', 'industry2_name',
             'industry3_code', 'industry3_name', 'industry4_code', 'industry4_name'],
-    defaults={"industry_src": "中证指数有限公司"}
+    defaults={"industry_src": "sw"}
 )
 
 
