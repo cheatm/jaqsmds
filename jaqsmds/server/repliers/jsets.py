@@ -12,7 +12,7 @@ SecDividend = Qi(
               'exdiv_date', 'publish_date', 'record_date', 'share_ratio', 'share_trans_ratio', 'symbol'],
     **{"date": "ann_date"}
 )
-SecAdjFactor = Qi("lb.secAdjFactor", defaults=['adjust_factor', 'symbol', 'trade_date'], **{"date": "trade_date"})
+SecAdjFactor = SymbolQI("lb.secAdjFactor", defaults=['adjust_factor', 'symbol', 'trade_date'], **{"date": "trade_date"})
 SecSusp = Qi("lb.secSusp",
              defaults=['ann_date', 'resu_date', 'susp_date', 'susp_reason', 'symbol'],
              **{"date": "date"})
