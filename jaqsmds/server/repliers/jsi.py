@@ -56,7 +56,6 @@ class JsiHandler(DBHandler):
         result = super(JsiHandler, self).receive(**kwargs)
         result[FREQ] = kwargs.get(FREQ, "1M").upper()
         fields = kwargs.get("fields", "")
-        print(result)
         if "vwap" in fields or (fields == ""):
             result["vwap"] = result["turnover"]/result["volume"]
         return result
