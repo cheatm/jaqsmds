@@ -80,11 +80,6 @@ class DailyFactorReader(RenameAxisReader):
     def __init__(self, db):
         super(DailyFactorReader, self).__init__(db, DailyFactorInterpreter())
 
-    def decorate(self, data):
-        data = super(DailyFactorReader, self).decorate(data)
-        data[self.index] = data[self.index].apply(date2int)
-        return data
-
     def rename(self, name):
         return name[:6]
 
@@ -93,6 +88,9 @@ class DailyFactorReader(RenameAxisReader):
             return name + ".XSHG"
         else:
             return name + ".XSHE"
+
+    def read(self, name, filters, fields):
+        return super(DailyFactorReader, self).read(name, filters, fields).rename_axis(date2int)
 
 
 class IndicatorReader(RenameAxisReader):
