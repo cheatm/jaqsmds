@@ -5,7 +5,8 @@ from functools import partial
 SymbolQI = partial(Qi, primary="symbol")
 
 
-InstrumentInfo = Qi("jz.instrumentInfo", defaults=['list_date', 'name', 'symbol'])
+InstrumentInfo = Qi("jz.instrumentInfo", defaults=['list_date', 'name', 'symbol'],
+                    trans={"inst_type": int, "list_date": int, "status": int})
 SecDividend = Qi(
     "lb.secDividend",
     defaults=['ann_date', 'bonus_list_date', 'cash', 'cash_tax', 'cashpay_date', 'div_enddate',

@@ -231,11 +231,12 @@ class Jset3DReader(JsetReaderInterface):
 
 class QueryInterpreter(object):
 
-    def __init__(self, view, defaults=None, primary=None, **ranges):
+    def __init__(self, view, defaults=None, primary=None, trans=None, **ranges):
         self.view = view
         self.ranges = ranges
         self.primary = primary
         self.defaults = dict.fromkeys(defaults, 1) if defaults else {}
+        self.trans = trans if isinstance(trans, dict) else {}
 
     def __call__(self, filter, fields):
         return dict(self.filter(filter)), self.fields(fields)
@@ -257,6 +258,10 @@ class QueryInterpreter(object):
             end = dct.pop("end_%s" % key, None)
             if start or end:
                 yield value, (start, end)
+        for key, method in self.trans.items():
+            value = dct.pop(key, None)
+            if value is not None:
+                yield key, method(value)
 
     def fields(self, string):
         fields = field_filter(string)
