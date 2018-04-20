@@ -243,7 +243,9 @@ class QueryInterpreter(object):
 
     def filter(self, string):
         single = {}
-        for key, value in iter_filter(string):
+        filters = dict(iter_filter(string))
+        yield from self.catch_trans(filters)
+        for key, value in filters.items():
             if "," in value:
                 yield key, set(value.split(","))
             else:
@@ -252,16 +254,25 @@ class QueryInterpreter(object):
         yield from self.catch(single)
         yield from single.items()
 
+    def catch_trans(self, dct):
+        for key, method in self.trans.items():
+            value = dct.pop(key, None)
+            if value is not None:
+                if "," in value:
+                    yield key, set(map(method, value.split(",")))
+                else:
+                    yield key, method(value)
+
     def catch(self, dct):
         for key, value in self.ranges.items():
             start = dct.pop("start_%s" % key, None)
             end = dct.pop("end_%s" % key, None)
             if start or end:
                 yield value, (start, end)
-        for key, method in self.trans.items():
-            value = dct.pop(key, None)
-            if value is not None:
-                yield key, method(value)
+        # for key, method in self.trans.items():
+        #     value = dct.pop(key, None)
+        #     if value is not None:
+        #         yield key, method(value)
 
     def fields(self, string):
         fields = field_filter(string)
