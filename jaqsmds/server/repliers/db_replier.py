@@ -1,7 +1,7 @@
 from jaqsmds.server.repliers.basic import RegularReplier
 from jaqsmds.server.repliers.jsets import JsetHandler
 from jaqsmds.server.repliers.daily import DailyHandler
-from jaqsmds.server.repliers.jsi import JsiHandler
+from jaqsmds.server.repliers.jsi import JsiHandler, MultiJsiHandler
 import pymongo
 
 
@@ -34,7 +34,8 @@ class DBReplier(RegularReplier):
         return JsetHandler(self.client, **dbs)
 
     def init_jsi(self, db):
-        return JsiHandler(self.client, db)
+        # return JsiHandler(self.client, db)
+        return MultiJsiHandler(self.client, **db)
 
     mapper = (
         (JSET, init_jset),

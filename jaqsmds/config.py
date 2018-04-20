@@ -16,7 +16,7 @@ db_map = {
            "lb.mfPortfolio": "MFPortfolio",
            "lb.mfBondPortfolio": "MFBondPortfolio"},
     JSD: "Stock_D",
-    JSI: "Stock_1M"
+    JSI: {"stock": "Stock_1M", "future": "future_1M"}
 }
 
 
