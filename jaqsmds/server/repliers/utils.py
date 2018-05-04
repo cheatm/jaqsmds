@@ -110,7 +110,8 @@ class DBHandler(MongodbHandler):
 
     def receive(self, **kwargs):
         names, args, kws = self.adapt(**kwargs)
-        return pd.concat(list(self.iter_read(names, *args, **kws)), ignore_index=True)
+        data = list(self.iter_read(names, *args, **kws))
+        return pd.concat(data, ignore_index=True)
 
     def adapt(self, **kwargs):
         raise NotImplementedError("func: adapt should be implemented.")
@@ -269,10 +270,6 @@ class QueryInterpreter(object):
             end = dct.pop("end_%s" % key, None)
             if start or end:
                 yield value, (start, end)
-        # for key, method in self.trans.items():
-        #     value = dct.pop(key, None)
-        #     if value is not None:
-        #         yield key, method(value)
 
     def fields(self, string):
         fields = field_filter(string)
@@ -364,7 +361,7 @@ class ColReader(BaseReader):
         query, projections = self.interpreter(filter, fields)
         filters = dict(self.create_filter(query))
         cursor = self.collection.find(filters, projections)
-        if self.interpreter.primary:
+        if self.interpreter.primary and (self.interpreter.primary in filters):
             cursor.hint([(self.interpreter.primary, 1)])
 
         return pd.DataFrame(list(cursor))

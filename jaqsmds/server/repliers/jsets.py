@@ -2,7 +2,13 @@ from jaqsmds.server.repliers.utils import QueryInterpreter as Qi, MongodbHandler
 from jaqsmds.server.repliers.daxis import DailyFactorReader, IndicatorReader
 from functools import partial
 
-SymbolQI = partial(Qi, primary="symbol")
+# SymbolQI = partial(Qi, primary="symbol")
+
+
+class SymbolQI(Qi):
+
+    def __init__(self, view, *args, **kwargs):
+        super(SymbolQI, self).__init__(view, *args, primary="symbol", **kwargs)
 
 
 InstrumentInfo = Qi("jz.instrumentInfo", defaults=['list_date', 'name', 'symbol'],
@@ -73,6 +79,17 @@ class SecTradeCalInterpreter(Qi):
 SecTradeCal = SecTradeCalInterpreter("jz.secTradeCal", defaults=['istradeday', 'trade_date'])
 
 
+class SStateInterpreter(SymbolQI):
+
+    def catch(self, dct):
+        start = dct.pop("start_date", 0)
+        end = dct.pop("end_date", 99999999)
+        yield "effDate", (int(start), int(end))
+
+
+SState = SStateInterpreter("lb.sState")
+
+
 class IndexConsInterpreter(Qi):
 
     def catch(self, dct):
@@ -105,12 +122,11 @@ SecIndustry = SecIndustryInterpreter(
 ViewFields = Qi("jz.viewFields")
 
 
-LB = [SecDividend, SecIndustry, SecAdjFactor, BalanceSheet, Income, CashFlow,
+LB = [SecDividend, SecIndustry, SecAdjFactor, BalanceSheet, Income, CashFlow, SState,
       ProfitExpress, SecRestricted, IndexCons, IndexWeightRange, FinIndicator, WindFinance]
 
 JZ = [InstrumentInfo, SecTradeCal, ApiList, ApiParam]
 
-# DBS = {SecDailyIndicator.view: SecDailyIndicator}
 
 DAILY_AXIS_READER = {
     "factor": DailyFactorReader,
