@@ -1,7 +1,11 @@
 from setuptools import setup, find_packages
 
 
-REQUIRES = open("requirements.txt").readlines()
+REQUIRES = []
+
+for line in open("requirements.txt").read().split("\n"):
+    if "git+" not in line:
+        REQUIRES.append(line)
 
 
 setup(
