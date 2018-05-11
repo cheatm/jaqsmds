@@ -12,13 +12,15 @@ services:
       - ".:/log"
 #      - ".:/conf"
 #    environment:
+#      MONGODB_URI:
 #      REDIS_URL:
 #      FRONTEND:
 #      BACKEND:
 #      PROCESS:
 #      LOG_DIR:
 #      LEVEL:
-#      MONGODB_URI:
+#      AUTH
+#      AUTH_EXPIRE
 #      STOCK_1M:
 #      STOCK_D:
 #      STOCK_H:
@@ -42,5 +44,3 @@ services:
 #      SEC_RESTRICTED:
 #      WIND_FINANCE:
 #      SEC_ADJ_FACTOR:
-#      MONGODB_URI:
-
