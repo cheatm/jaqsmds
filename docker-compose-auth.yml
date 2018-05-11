@@ -1,0 +1,46 @@
+version: '3'
+services:
+  jaqsmds:
+    container_name: jaqsmds_auth
+    build: .
+    image: "jaqsmds:auth"
+    restart: unless-stopped
+    command: jaqsmds auth_server
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - /usr/share/zoneinfo:/usr/share/zoneinfo:ro
+      - ".:/log"
+#      - ".:/conf"
+#    environment:
+#      REDIS_URL:
+#      FRONTEND:
+#      BACKEND:
+#      PROCESS:
+#      LOG_DIR:
+#      LEVEL:
+#      MONGODB_URI:
+#      STOCK_1M:
+#      STOCK_D:
+#      STOCK_H:
+#      FACTOR:
+#      DAILY_INDICATOR:
+#      API_LIST:
+#      API_PARAM:
+#      INST_INFO:
+#      TRADE_CAL:
+#      BALANCE_SHEET:
+#      CASH_FLOW:
+#      FIN_INDICATOR:
+#      INCOME:
+#      INDEX_CONS:
+#      INDEX_WEIGHT_RANGE:
+#      PROFIT_EXPRESS:
+#      S_STATE:
+#      SEC_DIVIDEND:
+#      SEC_INDUSTRY:
+#      SEC_SUSP:
+#      SEC_RESTRICTED:
+#      WIND_FINANCE:
+#      SEC_ADJ_FACTOR:
+#      MONGODB_URI:
+
