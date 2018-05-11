@@ -1,5 +1,6 @@
 # encoding:utf-8
 from datetime import datetime
+import time
 import logging
 
 from jaqs.data.dataapi.jrpc_py import _unpack_msgpack_snappy, _pack_msgpack_snappy
@@ -16,14 +17,24 @@ class Replier(object):
             reply = self.on_message(message)
         except Exception as e:
             logging.error("message | %s | %s", message, e)
-            reply = self.on_message_error(message)
+            reply = self.on_message_error(message, e)
 
         return _pack_msgpack_snappy(reply)
 
     def on_message(self, message):
-        return self.methods[message['method']](message)
+        name = message.get("method", None)
+        if name:
+            method = self.methods.get(name, None)
+            if method:
+                return method(message)
+            else:
+                raise KeyError("no such method: %s" % name)
+        else:
+            raise KeyError("key: 'method' not in query")
 
-    def on_message_error(self, message):
+    def on_message_error(self, message, e):
+        message['error'] = {"error": -1, "message": e}
+        message["result"] = {}
         return message
 
 
@@ -35,9 +46,9 @@ def heartbeat(dct):
     res = dct.copy()
     res.pop("params")
     logging.debug("heartbeat | %s" % res)
-    now_timestamp = datetime.now().timestamp()
+    now_timestamp = time.time()
     res["result"] = {"time": now_timestamp, "sub_hash": ""}
-    no_error(dct)
+    no_error(res)
     res['time'] = now_timestamp * 1000
     return res
 

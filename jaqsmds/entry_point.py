@@ -34,6 +34,20 @@ def server(conf=None, **kwargs):
     start_service(db_map=config.db_map, **config.server_config)
 
 
+@group.command(help="Run auth server for jaqs.data.DataApi client.")
+@click.argument("variables", nargs=-1)
+def auth_server(variables):
+    from jaqsmds.server.auth_server import start_service
+
+    env = {}
+    for item in variables:
+        r = item.split("=")
+        if len(r) == 2:
+            env[r[0]] = r[1]
+
+    start_service(**env)
+
+
 def catch_db(string):
     if string:
         return dict(map(lambda s: s.split("="), string.replace(" ", "").split("&")))
@@ -42,4 +56,6 @@ def catch_db(string):
 
 
 if __name__ == '__main__':
+    # import sys
+    # sys.argv.extend("auth_server MONGODB_URI=192.168.0.102 REDIS_URL=192.168.0.102/1".split(" "))
     group()

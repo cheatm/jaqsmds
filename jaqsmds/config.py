@@ -21,12 +21,12 @@ db_map = {
 
 
 server_config = {
-    "frontend": "tcp://0.0.0.0:23000",
-    "backend": "tcp://127.0.0.1:23001",
-    "mongodb_url": "mongodb://localhost:27017",
-    "process": 5,
-    "log_dir": os.environ.get("LOG_DIR", None),
-    "level": logging.WARNING
+    'frontend': os.environ.get('FRONTEND', 'tcp://0.0.0.0:23000'),
+    'backend': os.environ.get('BACKEND', 'tcp://127.0.0.1:23001'),
+    'mongodb_url': os.environ.get('MONGODB_URL', 'mongodb://localhost:27017'),
+    'process': int(os.environ.get('PROCESS', 5)),
+    'log_dir': os.environ.get('LOG_DIR', None),
+    "level": os.environ.get('LEVEL', logging.WARNING)
 }
 
 
@@ -55,3 +55,4 @@ def init_file(path):
     if os.path.isfile(path):
         conf = json.load(open(path))
         init(conf)
+

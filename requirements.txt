@@ -2,3 +2,5 @@ click==6.7
 pymongo>=3.4.0
 python-snappy==0.5.1
 jaqs>=0.6.7
+redis
+git+https://github.com/cheatm/datautils.git

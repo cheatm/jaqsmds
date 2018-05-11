@@ -48,7 +48,7 @@ import six
 class DailyFactorInterpreter(DailyAxisInterpreter):
 
     def __init__(self):
-        super(DailyFactorInterpreter, self).__init__("symbol", default="datetime")
+        super(DailyFactorInterpreter, self).__init__("symbol", default="datetime", view="factor")
 
     def catch(self, dct):
         yield self.default, (self._catch("start", dct), self._catch("end", dct))
@@ -65,7 +65,31 @@ class DailyFactorInterpreter(DailyAxisInterpreter):
         else:
             a2 = set([s[:6] for s in symbol])
 
+        if self.default and (len(a2) > 0):
+            a2.add(self.default)
         return a2
+
+
+class DailyIndicatorInterpreter(DailyAxisInterpreter):
+
+    def __init__(self):
+        super(DailyIndicatorInterpreter, self).__init__("symbol", {"date": "trade_date"}, default="trade_date",
+                                                        view="lb.secDailyIndicator")
+
+    def axis2(self, a1):
+        symbol = a1.pop(self.axis, [])
+        if isinstance(symbol, six.string_types):
+            a2 = {symbol[:6]}
+        else:
+            a2 = set([s[:6] for s in symbol])
+
+        if self.default and (len(a2) > 0):
+            a2.add(self.default)
+        return a2
+
+
+DailyIndicator = DailyIndicatorInterpreter()
+DailyFactor = DailyFactorInterpreter()
 
 
 def expand(code):

@@ -73,10 +73,7 @@ def time_range_daily(start=None, end=None):
     return dct
 
 
-class MongodbHandler(object):
-
-    def __init__(self, client):
-        self.client = client
+class Handler(object):
 
     def handle(self, dct):
         dct = dct.copy()
@@ -86,8 +83,7 @@ class MongodbHandler(object):
             if isinstance(result, pd.DataFrame):
                 result = result.to_dict("list")
         except Exception as e:
-            dct["error"] = {"error": -1, "message": str(e)}
-            dct["result"] = {}
+            dct["error"] = {"error": -1, "message": e}
             logging.error('handler | %s', traceback.format_exc(5))
         else:
             dct["result"] = result
@@ -99,6 +95,12 @@ class MongodbHandler(object):
 
     def receive(self, **kwargs):
         pass
+
+
+class MongodbHandler(Handler):
+
+    def __init__(self, client):
+        self.client = client
 
 
 class DBHandler(MongodbHandler):
@@ -245,24 +247,23 @@ class QueryInterpreter(object):
     def filter(self, string):
         single = {}
         filters = dict(iter_filter(string))
-        yield from self.catch_trans(filters)
+        yield from self.catch_trans(filters, single)
         for key, value in filters.items():
             if "," in value:
                 yield key, set(value.split(","))
             else:
                 single[key] = value
-
         yield from self.catch(single)
         yield from single.items()
 
-    def catch_trans(self, dct):
+    def catch_trans(self, dct, single):
         for key, method in self.trans.items():
             value = dct.pop(key, None)
             if value is not None:
                 if "," in value:
                     yield key, set(map(method, value.split(",")))
                 else:
-                    yield key, method(value)
+                    single[key] = method(value)
 
     def catch(self, dct):
         for key, value in self.ranges.items():
@@ -279,7 +280,8 @@ class QueryInterpreter(object):
 
 class DailyAxisInterpreter(object):
 
-    def __init__(self, axis, ranges=None, default=None):
+    def __init__(self, axis, ranges=None, default=None, view=None):
+        self.view = view
         self.axis = axis
         self.default = default
         self.ranges = ranges if isinstance(ranges, dict) else dict()
@@ -311,6 +313,8 @@ class DailyAxisInterpreter(object):
             a2 = {a2}
         elif not isinstance(a2, set):
             a2 = set(a2)
+        if self.default and (len(a2) > 0):
+            a2.add(self.default)
         return a2
 
     def catch(self, dct):
@@ -361,7 +365,9 @@ class ColReader(BaseReader):
         query, projections = self.interpreter(filter, fields)
         filters = dict(self.create_filter(query))
         cursor = self.collection.find(filters, projections)
+        print(filters)
         if self.interpreter.primary and (self.interpreter.primary in filters):
+            print(self.interpreter.primary)
             cursor.hint([(self.interpreter.primary, 1)])
 
         return pd.DataFrame(list(cursor))

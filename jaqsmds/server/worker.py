@@ -5,6 +5,7 @@ import zmq
 
 ENCODE = "utf-8"
 
+
 # 工作进程，接收客户端请求读取数据返回
 class SimpleWorker():
 
@@ -22,12 +23,15 @@ class SimpleWorker():
             try:
                 message = self.socket.recv_multipart()
                 if len(message) == 2:
-                    client, msg = message
-                    result = self.replier.handle(msg)
-                    self.socket.send_multipart([client, result])
+                    self.reply(message)
             except Exception as e:
                 logging.error(e)
                 break
+
+    def reply(self, message):
+        client, msg = message
+        result = self.replier.handle(msg)
+        self.socket.send_multipart([client, result])
 
 
 # 启动工作进程

@@ -11,8 +11,7 @@ class SymbolQI(Qi):
         super(SymbolQI, self).__init__(view, *args, primary="symbol", **kwargs)
 
 
-InstrumentInfo = Qi("jz.instrumentInfo", defaults=['list_date', 'name', 'symbol'],
-                    trans={"inst_type": int, "list_date": int, "status": int})
+InstrumentInfo = Qi("jz.instrumentInfo", trans={"inst_type": int, "list_date": int, "status": int})
 SecDividend = Qi(
     "lb.secDividend",
     defaults=['ann_date', 'bonus_list_date', 'cash', 'cash_tax', 'cashpay_date', 'div_enddate',
@@ -20,9 +19,9 @@ SecDividend = Qi(
     **{"date": "ann_date"}
 )
 SecAdjFactor = SymbolQI("lb.secAdjFactor", defaults=['adjust_factor', 'symbol', 'trade_date'], **{"date": "trade_date"})
-SecSusp = Qi("lb.secSusp",
-             defaults=['ann_date', 'resu_date', 'susp_date', 'susp_reason', 'symbol'],
-             **{"date": "date"})
+# SecSusp = Qi("lb.secSusp",
+#              defaults=['ann_date', 'resu_date', 'susp_date', 'susp_reason', 'symbol'],
+#              **{"date": "date"})
 SecDailyIndicator = Qi("lb.secDailyIndicator",
                        defaults=['symbol', 'trade_date'],
                        primary="symbol",
@@ -68,26 +67,44 @@ ApiParam = Qi("help.apiParam")
 WindFinance = SymbolQI("lb.windFinance", **{"date": "index"})
 
 
-class SecTradeCalInterpreter(Qi):
+# class SecTradeCalInterpreter(Qi):
+#
+#     def catch(self, dct):
+#         start = dct.pop("start_date", 0)
+#         end = dct.pop("end_date", 99999999)
+#         yield "trade_date", {"$gte": int(start), "$lte": int(end)}
+
+
+SecTradeCal = Qi("jz.secTradeCal", defaults=['istradeday', 'trade_date'],
+                 trans={"start_date": int, "end_date": int},
+                 date="trade_date")
+
+
+# class SStateInterpreter(SymbolQI):
+#
+#     def catch(self, dct):
+#         start = dct.pop("start_date", 0)
+#         end = dct.pop("end_date", 99999999)
+#         yield "effDate", (int(start), int(end))
+
+
+SState = SymbolQI("lb.sState", trans={"start_date": int, "end_date": int}, date="dffDate")
+
+
+class SecSuspInterpreter(Qi):
 
     def catch(self, dct):
-        start = dct.pop("start_date", 0)
-        end = dct.pop("end_date", 99999999)
-        yield "trade_date", {"$gte": int(start), "$lte": int(end)}
+        start = dct.pop("start_date", None)
+        if start:
+            yield "$or", [{"resu_date": {"$gte": start}}, {"resu_date": ""}]
+        end = dct.pop("end_date", None)
+        if end:
+            yield "susp_date", (None, end)
 
 
-SecTradeCal = SecTradeCalInterpreter("jz.secTradeCal", defaults=['istradeday', 'trade_date'])
-
-
-class SStateInterpreter(SymbolQI):
-
-    def catch(self, dct):
-        start = dct.pop("start_date", 0)
-        end = dct.pop("end_date", 99999999)
-        yield "effDate", (int(start), int(end))
-
-
-SState = SStateInterpreter("lb.sState")
+SecSusp = SecSuspInterpreter(
+    "lb.secSusp", defaults=['ann_date', 'resu_date', 'susp_date', 'susp_reason', 'symbol'], **{"date": "date"}
+)
 
 
 class IndexConsInterpreter(Qi):
@@ -96,11 +113,12 @@ class IndexConsInterpreter(Qi):
         start = dct.pop("start_date")
         end = dct.pop('end_date')
         yield "in_date", (None, end)
-        yield "out_date", [{"$gt": start}, "", None]
+        yield "out_date", (start, None)
 
 
 IndexCons = IndexConsInterpreter("lb.indexCons", primary='index_code',
                                  defaults=['in_date', 'index_code', 'out_date', 'symbol'])
+
 
 
 class SecIndustryInterpreter(Qi):
@@ -112,17 +130,20 @@ class SecIndustryInterpreter(Qi):
 
         yield from super(SecIndustryInterpreter, self).catch(dct)
 
-SecIndustry = SecIndustryInterpreter(
+
+SecIndustry = Qi(
     "lb.secIndustry",
     defaults=['in_date', 'industry1_code', 'industry1_name', 'industry2_code',
               'industry2_name', 'industry3_code', 'industry3_name', 'industry4_code',
-              'industry4_name', 'industry_src', 'out_date', 'symbol']
+              'industry4_name', 'industry_src', 'out_date', 'symbol'],
+    trans={"industry_src": lambda s: s.lower()}
 )
+
 
 ViewFields = Qi("jz.viewFields")
 
 
-LB = [SecDividend, SecIndustry, SecAdjFactor, BalanceSheet, Income, CashFlow, SState,
+LB = [SecDividend, SecIndustry, SecAdjFactor, BalanceSheet, Income, CashFlow, SState, SecSusp,
       ProfitExpress, SecRestricted, IndexCons, IndexWeightRange, FinIndicator, WindFinance]
 
 JZ = [InstrumentInfo, SecTradeCal, ApiList, ApiParam]
@@ -151,7 +172,7 @@ class JsetHandler(MongodbHandler):
 
         if lb:
             self.handlers.update(col_readers(self.client[lb], LB))
-            self.handlers[SecSusp.view] = SecSuspReader(self.client[lb]["secSusp"])
+            # self.handlers[SecSusp.view] = SecSuspReader(self.client[lb]["secSusp"])
 
         if jz:
             self.handlers.update(col_readers(self.client[jz], JZ))
