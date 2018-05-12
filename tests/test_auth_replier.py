@@ -15,6 +15,11 @@ class TestAuthReplier(unittest.TestCase):
         self.login_request = {"params": {"username": "user1", "password": "Xinger520"},
                               "client": self.client,
                               "method": "auth.login"}
+        self.logout_request = {'jsonrpc': '2.0',
+                               'method': 'auth.logout',
+                               'params': {},
+                               'id': '4',
+                               "client": self.client}
         self.heartbeat = {"params": {},
                           "client": self.client,
                           "method": ".sys.heartbeat"}
@@ -29,6 +34,10 @@ class TestAuthReplier(unittest.TestCase):
         instance.init()
         self.replier = AuthReplier()
         self.replier.handle(self.login_request)
+
+    def test_logout(self):
+        result = self.replier.handle(self.logout_request)
+        self.assertTrue(result["result"])
 
     def test_factor(self):
         data = self.replier.handle(self.query)

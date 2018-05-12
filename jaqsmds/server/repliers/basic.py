@@ -63,6 +63,15 @@ def login(dct):
     return res
 
 
+def logout(dct):
+    res = dct.copy()
+    res.pop('params', None)
+    res["result"] = True
+    no_error(res)
+    res['time'] = datetime.now().timestamp()
+    return res
+
+
 class RegularReplier(Replier):
 
     no_error = no_error
@@ -71,3 +80,4 @@ class RegularReplier(Replier):
         super().__init__()
         self.methods[".sys.heartbeat"] = heartbeat
         self.methods["auth.login"] = login
+        self.methods["auth.logout"] = logout

@@ -10,6 +10,7 @@ class AuthReplier(Replier):
         super(AuthReplier, self).__init__()
         self.methods[".sys.heartbeat"] = auth.heartbeat
         self.methods["auth.login"] = auth.login
+        self.methods["auth.logout"] = auth.logout
         self.jset = AuthJsetHandler()
         self.methods["jset.query"] = self.jset.handle
 

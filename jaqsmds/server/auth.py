@@ -1,10 +1,13 @@
 from datautils.tools.logger import logger
-from jaqsmds.server.repliers.basic import heartbeat as _heartbeat
+from jaqsmds.server.repliers.basic import heartbeat as _heartbeat, logout as _logout
 
 
 class BaseAuth(object):
 
     def login(self, client, user, password):
+        pass
+
+    def logout(self, client):
         pass
 
     def heartbeat(self, client):
@@ -38,9 +41,13 @@ class Auth(BaseAuth):
         doc = self.find(user)
         if isinstance(doc, dict):
             if doc["password"] == password:
-                self.permission_expire(client, doc["permission"])
-                return True
+                if self.permission_expire(client, doc["permission"]):
+                    return True
         return False
+
+    @logger("logout", 1)
+    def logout(self, client):
+        return self.redis.delete(client)
 
     @logger("heartbeat", 1, default=lambda: False, success="debug")
     def heartbeat(self, client):
@@ -63,7 +70,8 @@ class Auth(BaseAuth):
         pipeline = self.redis.pipeline()
         pipeline.sadd(name, *values)
         pipeline.expire(name, self.expire)
-        return pipeline.execute()
+        result = pipeline.execute()
+        return result[1]
 
 
 auth = BaseAuth()
@@ -75,7 +83,6 @@ def init():
     from jaqsmds.server import conf
 
     db, col = conf.AUTH.split(".", 1)
-
     Auth.init(
         StrictRedis.from_url(conf.REDIS_URL),
         MongoClient(conf.MONGODB_URI)[db][col],
@@ -116,6 +123,11 @@ def login(dct):
         dct["error"] = {"error": -1000,
                         "message": "login failure: Map(username -> %s, password -> %s)" % (username, password)}
     return dct
+
+
+def logout(dct):
+    auth.logout(dct.pop("client"))
+    return _logout(dct)
 
 
 def permission(dct):

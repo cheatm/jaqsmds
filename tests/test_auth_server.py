@@ -5,12 +5,16 @@ import unittest
 class TestAuthServer(unittest.TestCase):
 
     def setUp(self):
-        self.api = DataApi("tcp://127.0.0.1:23000")
+        # self.api = DataApi("tcp://192.168.0.101:24000")
+        self.api = DataApi("tcp://localhost:23000")
         self.user1 = {"username": "user1", "password": "Xinger520"}
         self.user2 = {"username": "user2", "password": "Xinger520"}
         self.query = {"view": "factor",
                       "filter": "start=20170101&end=20180101&symbol=000001,000002,600000",
                       "fields": "PB,PE,ACCA"}
+
+    def tearDown(self):
+        self.api.logout()
 
     def login_user1(self):
         return self.api.login(**self.user1)

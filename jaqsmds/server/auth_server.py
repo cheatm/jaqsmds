@@ -110,8 +110,3 @@ def start_service(**variables):
     # 启动进程管理
     manager = ServerManager()
     manager.start()
-
-
-if __name__ == '__main__':
-    start_service(MONGODB_URI="192.168.0.102", REDIS_URL="redis://192.168.0.102/1", AUTH="log.auth",
-                  FRONTEND="tcp://127.0.0.1:23000")
