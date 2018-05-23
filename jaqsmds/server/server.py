@@ -1,7 +1,6 @@
 from jaqsmds.server import conf
 from datautils.fxdayu import conf as data_conf
 from jaqsmds.server.proxy import run_proxy
-from jaqsmds.server.auth_worker import run_worker
 import multiprocessing
 from time import sleep
 from jaqsmds import logger
@@ -12,7 +11,8 @@ from datetime import datetime
 # 进程管理
 class ServerManager(object):
 
-    def __init__(self):
+    def __init__(self, worker_type):
+        self.worker_type = worker_type
         self.proxy = None
         self.workers = {}
         self._running = False
@@ -43,7 +43,7 @@ class ServerManager(object):
         worker_name = "Worker-%s" % name
         logging.warning("Starting %s." % worker_name)
 
-        p = multiprocessing.Process(target=run_worker,
+        p = multiprocessing.Process(target=self.worker_type,
                                     name=worker_name,
                                     args=(worker_name,))
         p.daemon = True
@@ -89,7 +89,8 @@ def log_variables(**kwargs):
         logging.warning("%s: %s", name, value)
 
 
-def start_service(**variables):
+def start_service(auth=False, **variables):
+    from jaqsmds.server import auth_worker, worker
     from importlib import reload
     import os
 
@@ -107,6 +108,9 @@ def start_service(**variables):
     log_variables(**cv)
     log_variables(**{name: variables[name] for name in set(variables).difference(set(cv))})
 
+    # 是否认证权限
+    worker_type = auth_worker.run_worker if auth else worker.run_worker
+
     # 启动进程管理
-    manager = ServerManager()
+    manager = ServerManager(worker_type)
     manager.start()

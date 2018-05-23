@@ -1,16 +1,11 @@
 version: '3'
 services:
-  redis:
-    container_name: redis_auth
-    image: redis:3.2
-    build: .
-    network_mode: "host"
   jaqsmds:
-    container_name: jaqsmds_auth
+    container_name: jaqsmds
     build: .
-    image: "jaqsmds:auth"
+    image: "jaqsmds:free"
     restart: unless-stopped
-    command: jaqsmds server --auth
+    command: jaqsmds server
     network_mode: "host"
     volumes:
       - /etc/localtime:/etc/localtime:ro

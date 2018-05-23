@@ -24,19 +24,24 @@ def date2int(date):
     return date.year*10000+date.month*100+date.day
 
 
+def int2date(num):
+    day = _range(num % 100, 1, 31)
+    month = _range(int(num/100) % 100, 1, 31)
+    year = _range(int(num/10000), 1, 2029)
+    return datetime(year, month, day)
+
+
+def _range(value, _min, _max):
+    if value > _max:
+        return _max
+    elif value < _min:
+        return _min
+    else:
+        return value
+
+
 def field_filter(string):
-    dct = {s: 1 for s in string.replace(" ", "").split(",")}
-    dct.pop("", None)
-    dct["_id"] = 0
-    return dct
-
-
-def fill_field_filter(string, *args):
-    dct = field_filter(string)
-    if len(dct) > 1:
-        for name in args:
-            dct[name] = 1
-    return dct
+    return set(string.replace(" ", "").split(","))
 
 
 def iter_filter(string):
@@ -238,7 +243,7 @@ class QueryInterpreter(object):
         self.view = view
         self.ranges = ranges
         self.primary = primary
-        self.defaults = dict.fromkeys(defaults, 1) if defaults else {}
+        self.defaults = defaults if defaults else set()
         self.trans = trans if isinstance(trans, dict) else {}
 
     def __call__(self, filter, fields):
@@ -273,9 +278,11 @@ class QueryInterpreter(object):
                 yield value, (start, end)
 
     def fields(self, string):
+        if string == "":
+            return None
         fields = field_filter(string)
         fields.update(self.defaults)
-        return fields
+        return list(fields)
 
 
 class DailyAxisInterpreter(object):

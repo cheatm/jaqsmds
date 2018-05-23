@@ -11,15 +11,14 @@ class Replier(object):
     def __init__(self):
         self.methods = {}
 
-    def handle(self, request):
-        message = _unpack_msgpack_snappy(request)
+    def handle(self, message):
         try:
             reply = self.on_message(message)
         except Exception as e:
             logging.error("message | %s | %s", message, e)
             reply = self.on_message_error(message, e)
 
-        return _pack_msgpack_snappy(reply)
+        return reply
 
     def on_message(self, message):
         name = message.get("method", None)

@@ -1,4 +1,5 @@
 from datetime import datetime
+from jaqs.data.dataapi.jrpc_py import _unpack_msgpack_snappy, _pack_msgpack_snappy
 import logging
 import zmq
 
@@ -30,15 +31,20 @@ class SimpleWorker():
 
     def reply(self, message):
         client, msg = message
+        msg = _unpack_msgpack_snappy(msg)
         result = self.replier.handle(msg)
-        self.socket.send_multipart([client, result])
+        reply = _pack_msgpack_snappy(result)
+        self.socket.send_multipart([client, reply])
 
 
 # 启动工作进程
-def run_worker(backend, mongodb_url, log_dir=None, log_file=None, level=logging.WARNING, db_map=None):
-    from jaqsmds.server.repliers.db_replier import DBReplier
+def run_worker(name):
+    from datautils.fxdayu import instance
+    from jaqsmds.server import conf
+    from jaqsmds.server.repliers.free_replier import FreeReplier
     from jaqsmds import logger
 
-    logger.init(log_dir, log_file, level)
-    worker = SimpleWorker(backend, DBReplier(mongodb_url, db_map))
+    logger.init(conf.LOG_DIR, name, conf.LEVEL)
+    instance.init()
+    worker = SimpleWorker(conf.BACKEND, FreeReplier())
     worker.run()
