@@ -1,8 +1,4 @@
-from jaqsmds.server.repliers.utils import QueryInterpreter as Qi, MongodbHandler, ColReader
-from jaqsmds.server.repliers.daxis import DailyFactorReader, IndicatorReader
-from functools import partial
-
-# SymbolQI = partial(Qi, primary="symbol")
+from jaqsmds.server.repliers.utils import QueryInterpreter as Qi
 
 
 class SymbolQI(Qi):
@@ -19,9 +15,11 @@ SecDividend = Qi(
     **{"date": "ann_date"}
 )
 SecAdjFactor = SymbolQI("lb.secAdjFactor", defaults=['adjust_factor', 'symbol', 'trade_date'], **{"date": "trade_date"})
-# SecSusp = Qi("lb.secSusp",
-#              defaults=['ann_date', 'resu_date', 'susp_date', 'susp_reason', 'symbol'],
-#              **{"date": "date"})
+SecSusp = Qi("lb.secSusp",
+             defaults=['ann_date', 'resu_date', 'susp_date', 'susp_reason', 'symbol'],
+             **{"date": "date"})
+IndexCons = Qi("lb.indexCons", primary='index_code', defaults=['in_date', 'index_code', 'out_date', 'symbol'],
+               **{"date": "date"})
 SecDailyIndicator = Qi("lb.secDailyIndicator",
                        defaults=['symbol', 'trade_date'],
                        primary="symbol",
@@ -65,29 +63,9 @@ FinIndicator = SymbolQI("lb.finIndicator",
 ApiList = Qi("help.apiList")
 ApiParam = Qi("help.apiParam")
 WindFinance = SymbolQI("lb.windFinance", **{"date": "index"})
-
-
-# class SecTradeCalInterpreter(Qi):
-#
-#     def catch(self, dct):
-#         start = dct.pop("start_date", 0)
-#         end = dct.pop("end_date", 99999999)
-#         yield "trade_date", {"$gte": int(start), "$lte": int(end)}
-
-
 SecTradeCal = Qi("jz.secTradeCal", defaults=['istradeday', 'trade_date'],
                  trans={"start_date": int, "end_date": int},
                  date="trade_date")
-
-
-# class SStateInterpreter(SymbolQI):
-#
-#     def catch(self, dct):
-#         start = dct.pop("start_date", 0)
-#         end = dct.pop("end_date", 99999999)
-#         yield "effDate", (int(start), int(end))
-
-
 SState = SymbolQI("lb.sState", trans={"start_date": int, "end_date": int}, date="dffDate")
 
 
@@ -101,10 +79,10 @@ class SecSuspInterpreter(Qi):
         if end:
             yield "susp_date", (None, end)
 
-
-SecSusp = SecSuspInterpreter(
-    "lb.secSusp", defaults=['ann_date', 'resu_date', 'susp_date', 'susp_reason', 'symbol'], **{"date": "date"}
-)
+#
+# SecSusp = SecSuspInterpreter(
+#     "lb.secSusp", defaults=['ann_date', 'resu_date', 'susp_date', 'susp_reason', 'symbol'], **{"date": "date"}
+# )
 
 
 class IndexConsInterpreter(Qi):
@@ -114,11 +92,10 @@ class IndexConsInterpreter(Qi):
         end = dct.pop('end_date')
         yield "in_date", (None, end)
         yield "out_date", (start, None)
-
-
-IndexCons = IndexConsInterpreter("lb.indexCons", primary='index_code',
-                                 defaults=['in_date', 'index_code', 'out_date', 'symbol'])
-
+#
+#
+# IndexCons = IndexConsInterpreter("lb.indexCons", primary='index_code',
+#                                  defaults=['in_date', 'index_code', 'out_date', 'symbol'])
 
 
 class SecIndustryInterpreter(Qi):
@@ -140,100 +117,16 @@ SecIndustry = Qi(
 )
 
 
+DailyIndicator = Qi("lb.secDailyIndicator", date="trade_date")
+DailyFactor = Qi("factor", date="datetime")
+FxdayuFactor = Qi("fxdayu.factor", date="datetime")
 ViewFields = Qi("jz.viewFields")
 
 
 LB = [SecDividend, SecIndustry, SecAdjFactor, BalanceSheet, Income, CashFlow, SState, SecSusp,
-      ProfitExpress, SecRestricted, IndexCons, IndexWeightRange, FinIndicator, WindFinance]
+      ProfitExpress, SecRestricted, IndexCons, IndexWeightRange, FinIndicator, WindFinance, DailyIndicator]
 
 JZ = [InstrumentInfo, SecTradeCal, ApiList, ApiParam]
 
+OTHER = [DailyFactor, FxdayuFactor]
 
-DAILY_AXIS_READER = {
-    "factor": DailyFactorReader,
-    "lb.secDailyIndicator": IndicatorReader
-}
-
-
-def col_readers(db, interpreters):
-    dct = {}
-    for interpreter in interpreters:
-        collection = db[interpreter.view.split(".", 1)[1]]
-        dct[interpreter.view] = ColReader(collection, interpreter)
-
-    return dct
-
-
-class JsetHandler(MongodbHandler):
-
-    def __init__(self, client, lb=None, jz=None, **other):
-        super(JsetHandler, self).__init__(client)
-        self.handlers = {}
-
-        if lb:
-            self.handlers.update(col_readers(self.client[lb], LB))
-            # self.handlers[SecSusp.view] = SecSuspReader(self.client[lb]["secSusp"])
-
-        if jz:
-            self.handlers.update(col_readers(self.client[jz], JZ))
-            self.handlers[ViewFields.view] = ViewFieldsReader(self.client[jz]["viewFields"])
-
-        for view, db in other.items():
-            Reader = DAILY_AXIS_READER.get(view, None)
-            if Reader is not None:
-                self.handlers[view] = Reader(self.client[db])
-
-
-    def __getitem__(self, item):
-        return self.handlers.get(item, None)
-
-    def receive(self, view, filter, fields, **kwargs):
-        parser = self.handlers.get(view, None)
-        if parser is not None:
-            return parser.parse(filter, fields)
-        else:
-            raise ValueError("Invalid view: %s" % view)
-
-
-class ViewFieldsReader(ColReader):
-
-    _view = "view"
-    _fields = "fields"
-
-    def __init__(self, collection):
-        super(ViewFieldsReader, self).__init__(collection, ViewFields)
-
-    def parse(self, filter, fields):
-        query, projections = self.interpreter(filter, fields)
-        filters = dict(self.create_filter(query))
-        cursor = self.collection.find(filters, projections)
-        if self.interpreter.primary:
-            cursor.hint([(self.interpreter.primary, 1)])
-
-        return {doc[self._view]: doc[self._fields] for doc in list(cursor)}
-
-
-import six
-
-
-class SecSuspReader(ColReader):
-
-    def __init__(self, collection):
-        super(SecSuspReader, self).__init__(collection, SecSusp)
-
-    @staticmethod
-    def create_filter(dct):
-        filters = {}
-        symbol = dct.get("symbol", [])
-        if isinstance(symbol, six.string_types):
-            filters["symbol"] = symbol
-        else:
-            if len(symbol):
-                filters["symbol"] = {"$in": list(symbol)}
-
-        start, end = dct.get("date", (None, None))
-        if start:
-            filters["$or"] = [{"resu_date": {"$gte": start}}, {"resu_date": ""}]
-        if end:
-            filters["susp_date"] = {"$lte": end}
-        return filters

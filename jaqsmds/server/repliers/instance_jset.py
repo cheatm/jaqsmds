@@ -28,6 +28,7 @@ VIEW_KEY_MAP = {'help.apiList': 'API_LIST',
                 'JSI': 'STOCK_1M',
                 'JSD': 'STOCK_D',
                 'factor': 'FACTOR',
+                "fxdayu.factor": "fxdayu_factor",
                 'lb.secDailyIndicator': 'DAILY_INDICATOR',
                 'lb.secAdjFactor': "SEC_ADJ_FACTOR"}
 
@@ -66,22 +67,7 @@ def time2int(time):
 
 
 DailyIndicator = jsets.Qi("lb.secDailyIndicator", date="trade_date")
-
-
-class DailyFactorInterpreter(jsets.Qi):
-
-    def __init__(self):
-        super(DailyFactorInterpreter, self).__init__(view="factor")
-
-    def catch(self, dct):
-        start = dct.pop("start", None)
-        end = dct.pop("end", None)
-
-        if start or end:
-            yield "datetime", (start, end)
-
-
-DailyFactor = DailyFactorInterpreter()
+DailyFactor = jsets.Qi("factor", date="datetime")
 
 
 class JsetHandler(Handler):
@@ -92,8 +78,8 @@ class JsetHandler(Handler):
             self.methods[interpreter.view] = ViewReader(interpreter)
         for interpreter in jsets.LB:
             self.methods[interpreter.view] = ViewReader(interpreter)
-        self.methods[DailyIndicator.view] = ViewReader(DailyIndicator)
-        self.methods[DailyFactor.view] = ViewReader(DailyFactor)
+        for interpreter in jsets.OTHER:
+            self.methods[interpreter.view] = ViewReader(interpreter)
 
     def receive(self, view, filter, fields, **kwargs):
         try:
@@ -239,20 +225,3 @@ class JsiHandler(Handler):
         data["code"] = pd.DataFrame({name: fold_code(name) for name in data.minor_axis}, data.major_axis)
         data["freq"] = freq
         return data
-
-
-if __name__ == '__main__':
-    from datautils.fxdayu import conf
-    from jaqsmds import logger
-    from datetime import datetime
-
-    logger.init()
-    conf.MONGODB_URI = "192.168.0.102"
-    instance.init()
-    # handler = JsiHandler()
-    # print(handler.receive("000001.SZ,000002.SZ", 0, 0, 20180420))
-
-    # handler = JsdHandler()
-    # print(handler.receive(**{'symbol': '000016.SH', 'fields': 'trade_date,symbol,close,vwap,volume,turnover', 'begin_date': 20170102, 'end_date': 20170327, 'adjust_mode': 'post', 'freq': '1d'}))
-    handler = JsetHandler()
-    print(handler.receive("factor", "symbol=000001.SZ,600000.SH&start_date=20160505&end_date=20170304", "PB,A020006A"))
