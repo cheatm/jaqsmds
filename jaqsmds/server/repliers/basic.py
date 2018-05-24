@@ -32,7 +32,7 @@ class Replier(object):
             raise KeyError("key: 'method' not in query")
 
     def on_message_error(self, message, e):
-        message['error'] = {"error": -1, "message": e}
+        message['error'] = {"error": -1, "message": str(e)}
         message["result"] = {}
         return message
 
