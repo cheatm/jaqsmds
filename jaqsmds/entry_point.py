@@ -24,10 +24,3 @@ def catch_db(string):
         return dict(map(lambda s: s.split("="), string.replace(" ", "").split("&")))
     else:
         return {}
-
-
-if __name__ == '__main__':
-    import sys
-    # sys.argv.extend("auth_server MONGODB_URI=192.168.0.102 REDIS_URL=192.168.0.102/1".split(" "))
-    sys.argv.extend("server MONGODB_URI=192.168.0.102".split(" "))
-    group()

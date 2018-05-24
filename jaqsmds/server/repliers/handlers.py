@@ -132,7 +132,7 @@ def merge(dct, vwap):
 class JsdHandler(Handler):
 
     def __init__(self):
-        self.trade_cal = instance.api.trade_cal("trade_date").index
+        self.trade_cal = instance.api.trade_cal("trade_date").index.sort_values()
 
     def receive(self, symbol, begin_date, end_date, fields="", adjust_mode="none", freq="1d", **kwargs):
         # Modify inputs
