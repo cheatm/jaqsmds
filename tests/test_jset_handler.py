@@ -1,5 +1,5 @@
 from unittest import TestCase
-from jaqsmds.server.repliers.instance_jset import JsetHandler
+from jaqsmds.server.repliers.handlers import JsetHandler
 from datautils.fxdayu import instance
 from datautils.fxdayu import conf
 

@@ -1,4 +1,4 @@
-from jaqsmds.server.repliers.instance_jset import JsetHandler
+from jaqsmds.server.repliers.handlers import JsetHandler
 from jaqsmds.server.repliers.basic import Replier
 from jaqsmds.server import auth
 import logging

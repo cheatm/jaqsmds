@@ -1,5 +1,5 @@
 from jaqsmds.server.repliers.basic import RegularReplier
-from jaqsmds.server.repliers.instance_jset import JsetHandler, JsdHandler, JsiHandler
+from jaqsmds.server.repliers.handlers import JsetHandler, JsdHandler, JsiHandler
 
 
 class FreeReplier(RegularReplier):

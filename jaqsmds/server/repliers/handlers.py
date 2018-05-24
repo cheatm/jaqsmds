@@ -174,6 +174,7 @@ class JsdHandler(Handler):
     def _adjust(self, data, adjust):
         for name in ["open", "high", "low", "close", "vwap"]:
             if name in data:
+                print(data[name])
                 data[name] *= adjust
 
     def _adjust_factor(self, symbol, trade_dates):
@@ -182,10 +183,8 @@ class JsdHandler(Handler):
         adj = instance.api.sec_adj_factor(trade_date=(start, end), symbol=symbol).reindex_axis(
             ["trade_date", "symbol", "adjust_factor"], 1
         )
-
-        return adj.drop_duplicates(["trade_date", "symbol"]).pivot(
-            "trade_date", "symbol", "adjust_factor"
-        ).rename_axis(int).reindex(trade_dates).ffill().fillna(1)
+        adj = adj.drop_duplicates(["trade_date", "symbol"]).pivot("trade_date", "symbol", "adjust_factor").rename_axis(int)
+        return pd.DataFrame(adj, trade_dates, symbol).ffill().fillna(1)
 
     def _get_trade_cal(self, start, end):
         sliced = slice(*self.trade_cal.slice_locs(start, end, kind="loc"))
