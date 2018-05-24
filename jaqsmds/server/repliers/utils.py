@@ -63,7 +63,7 @@ class Handler(object):
             if isinstance(result, pd.DataFrame):
                 result = result.to_dict("list")
         except Exception as e:
-            dct["error"] = {"error": -1, "message": e}
+            dct["error"] = {"error": -1, "message": str(e)}
             logging.error('handler | %s', traceback.format_exc(5))
         else:
             dct["result"] = result

@@ -80,6 +80,7 @@ class JsetHandler(Handler):
             self.methods[interpreter.view] = ViewReader(interpreter)
         for interpreter in jsets.OTHER:
             self.methods[interpreter.view] = ViewReader(interpreter)
+        self.methods["help.predefine"] = predefine
 
     def receive(self, view, filter, fields, **kwargs):
         try:
@@ -88,6 +89,14 @@ class JsetHandler(Handler):
             raise KeyError("No such view: %s" % view)
 
         return method(filter, fields)
+
+
+def predefine(*args, **kwargs):
+    return instance.api.api_param(
+        fields=["api", "param", "ptype"],
+        api=["lb.secDailyIndicator", "lb.income", "lb.balanceSheet",
+             "lb.cashFlow", "lb.finIndicator", "factor", "fxdayu_factor"],
+    )
 
 
 def unfold(symbol):
@@ -174,7 +183,6 @@ class JsdHandler(Handler):
     def _adjust(self, data, adjust):
         for name in ["open", "high", "low", "close", "vwap"]:
             if name in data:
-                print(data[name])
                 data[name] *= adjust
 
     def _adjust_factor(self, symbol, trade_dates):
