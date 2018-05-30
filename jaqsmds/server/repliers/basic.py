@@ -55,19 +55,19 @@ def heartbeat(dct):
 def login(dct):
     res = dct.copy()
     params = res.pop("params")
-    logging.warning("login | %s" % params)
     res["result"] = "username: %s" % params["username"]
     no_error(res)
     res['time'] = datetime.now().timestamp()
+    logging.warning("login | %s" % res)
     return res
 
 
 def logout(dct):
     res = dct.copy()
-    res.pop('params', None)
     res["result"] = True
     no_error(res)
     res['time'] = datetime.now().timestamp()
+    logging.warning("logout | %s" % res)
     return res
 
 

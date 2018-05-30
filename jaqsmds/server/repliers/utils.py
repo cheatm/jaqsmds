@@ -118,8 +118,9 @@ class QueryInterpreter(object):
                 yield value, (start, end)
 
     def fields(self, string):
-        if string == "":
-            return None
-        fields = field_filter(string)
+        if string != "":
+            fields = field_filter(string)
+        else:
+            fields = set()
         fields.update(self.defaults)
         return list(fields)

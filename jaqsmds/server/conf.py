@@ -11,6 +11,7 @@ LEVEL = int(os.environ.get('LEVEL', logging.WARNING))
 MONGODB_URI = os.environ.get("MONGODB_URI", "localhost")
 AUTH = os.environ.get("AUTH", "users.auth")
 AUTH_EXPIRE = int(os.environ.get("AUTH_EXPIRE", 300))
+FILE = os.environ.get("FILE", "/conf/config.json")
 
 
 def variables():

@@ -24,3 +24,7 @@ def catch_db(string):
         return dict(map(lambda s: s.split("="), string.replace(" ", "").split("&")))
     else:
         return {}
+
+
+if __name__ == '__main__':
+    group()

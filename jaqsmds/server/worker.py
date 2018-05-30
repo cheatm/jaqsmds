@@ -43,8 +43,23 @@ def run_worker(name):
     from jaqsmds.server import conf
     from jaqsmds.server.repliers.free_replier import FreeReplier
     from jaqsmds import logger
+    import json
+    import os
 
     logger.init(conf.LOG_DIR, name, conf.LEVEL)
-    instance.init()
+    if os.path.isfile(conf.FILE):
+        with open(conf.FILE) as f:
+            config = json.load(f)
+            if isinstance(config, dict):
+                instance.init(config)
+            elif isinstance(config, list):
+                instance.init(config)
+    else:
+        instance.init_mongodb_example()
+
     worker = SimpleWorker(conf.BACKEND, FreeReplier())
     worker.run()
+
+
+if __name__ == '__main__':
+    run_worker("test")

@@ -30,12 +30,8 @@ VIEW_KEY_MAP = {'help.apiList': 'API_LIST',
                 'factor': 'FACTOR',
                 "fxdayu.factor": "fxdayu_factor",
                 'lb.secDailyIndicator': 'DAILY_INDICATOR',
-                'lb.secAdjFactor': "SEC_ADJ_FACTOR"}
-
-
-JSET_VIEWS = ['help.apiList', 'help.apiParam', 'jz.instrumentInfo', 'jz.secTradeCal', 'lb.balanceSheet', 'lb.cashFlow',
-              'lb.finIndicator', 'lb.income', 'lb.indexCons', 'lb.indexWeightRange', 'lb.profitExpress', 'lb.sState',
-              'lb.secDividend', 'lb.secIndustry', 'lb.secRestricted', 'lb.secSusp', 'lb.windFinance']
+                'lb.secAdjFactor': "SEC_ADJ_FACTOR",
+                'updateStatus': "UPDATE_STATUS"}
 
 
 class ViewReader(object):
@@ -51,7 +47,7 @@ class ViewReader(object):
 
     def read(self, filter, fields):
         filters, prj = self.interpreter(filter, fields)
-        result = self.reader(fields=fields, **filters)
+        result = self.reader(fields=prj, **filters)
         return result
 
 
@@ -74,12 +70,8 @@ class JsetHandler(Handler):
 
     def __init__(self):
         self.methods = {}
-        for interpreter in jsets.JZ:
-            self.methods[interpreter.view] = ViewReader(interpreter)
-        for interpreter in jsets.LB:
-            self.methods[interpreter.view] = ViewReader(interpreter)
-        for interpreter in jsets.OTHER:
-            self.methods[interpreter.view] = ViewReader(interpreter)
+        for name, interpreter in jsets.API_JSET_MAP.items():
+            self.methods[interpreter.view] = ViewReader(interpreter, instance.api.__getattribute__(name))
         self.methods["help.predefine"] = predefine
 
     def receive(self, view, filter, fields, **kwargs):
@@ -87,7 +79,6 @@ class JsetHandler(Handler):
             method = self.methods[view]
         except KeyError:
             raise KeyError("No such view: %s" % view)
-
         return method(filter, fields)
 
 
@@ -132,14 +123,12 @@ def merge(dct, vwap):
 class JsdHandler(Handler):
 
     def __init__(self):
-        self.trade_cal = instance.api.trade_cal("trade_date").index.sort_values()
+        self.trade_cal = instance.api.trade_cal().set_index("trade_date").index.sort_values()
 
     def receive(self, symbol, begin_date, end_date, fields="", adjust_mode="none", freq="1d", **kwargs):
         # Modify inputs
-        symbol = list(map(unfold, symbol.split(",")))
-        start = int2date(begin_date).replace(hour=15)
-        end = int2date(end_date).replace(hour=15)
-        fields = set(fields.split(",")) if len(fields) else {}
+        symbol = symbol.split(",")
+        fields = set(fields.split(",")) if len(fields) else set()
 
         if (len(fields) == 0):
             vwap = True
@@ -153,7 +142,7 @@ class JsdHandler(Handler):
             vwap = False
 
         # Read original data
-        data = instance.api.stock_d(symbol, "datetime", fields, datetime=(start, end))
+        data = instance.api.daily(symbol, begin_date, end_date, fields)
 
         # Catch trade_dates
         trade_dates = self._get_trade_cal(begin_date, end_date)
@@ -222,7 +211,7 @@ class JsiHandler(Handler):
         return result
 
     def read(self, symbol, begin_time, end_time, trade_date, freq, fields, vwap=False):
-        data = instance.api.stock_1m(symbol, "datetime", fields, _d=trade_date)
+        data = instance.api.bar(symbol, trade_date, fields)
         data = merge(data, vwap)
         dates = list(map(lambda t: t.year*10000+t.month*100+t.day, data.major_axis))
         dates = pd.DataFrame({name: dates for name in data.minor_axis}, data.major_axis)

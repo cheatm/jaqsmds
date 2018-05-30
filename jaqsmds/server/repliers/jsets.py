@@ -69,35 +69,6 @@ SecTradeCal = Qi("jz.secTradeCal", defaults=['istradeday', 'trade_date'],
 SState = SymbolQI("lb.sState", trans={"start_date": int, "end_date": int}, date="dffDate")
 
 
-class SecSuspInterpreter(Qi):
-
-    def catch(self, dct):
-        start = dct.pop("start_date", None)
-        if start:
-            yield "$or", [{"resu_date": {"$gte": start}}, {"resu_date": ""}]
-        end = dct.pop("end_date", None)
-        if end:
-            yield "susp_date", (None, end)
-
-#
-# SecSusp = SecSuspInterpreter(
-#     "lb.secSusp", defaults=['ann_date', 'resu_date', 'susp_date', 'susp_reason', 'symbol'], **{"date": "date"}
-# )
-
-
-class IndexConsInterpreter(Qi):
-
-    def catch(self, dct):
-        start = dct.pop("start_date")
-        end = dct.pop('end_date')
-        yield "in_date", (None, end)
-        yield "out_date", (start, None)
-#
-#
-# IndexCons = IndexConsInterpreter("lb.indexCons", primary='index_code',
-#                                  defaults=['in_date', 'index_code', 'out_date', 'symbol'])
-
-
 class SecIndustryInterpreter(Qi):
 
     def catch(self, dct):
@@ -121,6 +92,7 @@ DailyIndicator = Qi("lb.secDailyIndicator", date="trade_date")
 DailyFactor = Qi("factor", date="datetime")
 FxdayuFactor = Qi("fxdayu.factor", date="datetime")
 ViewFields = Qi("jz.viewFields")
+UpdateStatus = Qi('updateStatus', date="trade_date")
 
 
 LB = [SecDividend, SecIndustry, SecAdjFactor, BalanceSheet, Income, CashFlow, SState, SecSusp,
@@ -130,3 +102,28 @@ JZ = [InstrumentInfo, SecTradeCal, ApiList, ApiParam]
 
 OTHER = [DailyFactor, FxdayuFactor]
 
+
+API_JSET_MAP = {
+    "api_list": ApiList,
+    "api_param": ApiParam,
+    "inst_info": InstrumentInfo,
+    "trade_cal": SecTradeCal,
+    "balance_sheet": BalanceSheet,
+    "cash_flow": CashFlow,
+    "fin_indicator": FinIndicator,
+    "income": Income,
+    "index_cons": IndexCons,
+    "index_weight_range": IndexWeightRange,
+    "profit_express": ProfitExpress,
+    "s_state": SState,
+    "sec_dividend": SecDividend,
+    "sec_industry": SecIndustry,
+    "sec_restricted": SecRestricted,
+    "sec_susp": SecSusp,
+    "wind_finance": WindFinance,
+    "factor": DailyFactor,
+    "fxdayu_factor": FxdayuFactor,
+    "daily_indicator": SecDailyIndicator,
+    "sec_adj_factor": SecAdjFactor,
+    "update_status": UpdateStatus
+}
