@@ -79,12 +79,13 @@ class Handler(object):
 
 class QueryInterpreter(object):
 
-    def __init__(self, view, defaults=None, primary=None, trans=None, **ranges):
+    def __init__(self, view, defaults=None, primary=None, trans=None, sort=None, **ranges):
         self.view = view
         self.ranges = ranges
         self.primary = primary
         self.defaults = defaults if defaults else set()
         self.trans = trans if isinstance(trans, dict) else {}
+        self.sort = sort if isinstance(sort, (list, str)) else ["symbol", "trade_date"] 
 
     def __call__(self, filter, fields):
         return dict(self.filter(filter)), self.fields(fields)

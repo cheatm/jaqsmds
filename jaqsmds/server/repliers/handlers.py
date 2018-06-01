@@ -43,7 +43,7 @@ class ViewReader(object):
     def __call__(self, filter, fields):
         filters, prj = self.interpreter(filter, fields)
         result = self.reader(fields=prj, **filters)
-        return result
+        return result.sort_values(self.interpreter.sort)
 
     def read(self, filter, fields):
         filters, prj = self.interpreter(filter, fields)
@@ -63,7 +63,7 @@ def time2int(time):
 
 
 DailyIndicator = jsets.Qi("lb.secDailyIndicator", date="trade_date")
-DailyFactor = jsets.Qi("factor", date="datetime")
+DailyFactor = jsets.Qi("factor", date="trade_date")
 
 
 class JsetHandler(Handler):
@@ -122,52 +122,71 @@ def merge(dct, vwap):
 
 class JsdHandler(Handler):
 
+    default_fields = {"trade_date", "symbol", "open", "high", "low", "close", "volume", "turnover", "vwap"}
+    composory_fields = {"trade_date", "symbol"}
+
     def __init__(self):
         self.trade_cal = instance.api.trade_cal().set_index("trade_date").index.sort_values()
 
     def receive(self, symbol, begin_date, end_date, fields="", adjust_mode="none", freq="1d", **kwargs):
         # Modify inputs
         symbol = symbol.split(",")
-        fields = set(fields.split(",")) if len(fields) else set()
-
-        if (len(fields) == 0):
-            vwap = True
-            fields = None
-        elif "vwap" in fields:
-            fields.add("volume")
-            fields.add("turnover")
-            fields.remove("vwap")
-            vwap = True
+        if len(fields):
+            fields = set(fields.split(","))
+            fields.update(self.composory_fields)
         else:
-            vwap = False
+            fields = self.default_fields
+
+        # fields = set(fields.split(",")) if len(fields) else set()
+
+        # if (len(fields) == 0):
+        #     vwap = True
+        #     fields = None
+        # elif "vwap" in fields:
+        #     fields.add("volume")
+        #     fields.add("turnover")
+        #     fields.remove("vwap")
+        #     vwap = True
+        # else:
+        #     vwap = False
 
         # Read original data
-        data = instance.api.daily(symbol, begin_date, end_date, fields)
-
-        # Catch trade_dates
-        trade_dates = self._get_trade_cal(begin_date, end_date)
-
-        # Decorate data in Panel format
-        for name, item in data.items():
-            item["trade_status"] = 1
-        data = merge(data, vwap)
-        data.rename_axis(date2int, 1, inplace=True)
-        data["code"] = pd.DataFrame({name: fold_code(name) for name in data.minor_axis}, data.major_axis)
-        data["freq"] = freq
-        data = data.reindex(major_axis=trade_dates)
-        data.fillna(0, inplace=True)
-        data.rename_axis(fold, 2, inplace=True)
-
-        # Adjust price
+        data = instance.api.daily(symbol, begin_date, end_date, fields).sort_values(["symbol", "trade_date"])
         if adjust_mode != "none":
-            adjust = self._adjust_factor(list(data.minor_axis), trade_dates)
+            data.set_index(["symbol", "trade_date"], inplace=True)
+            adjust_factor = instance.api.sec_adj_factor(None, {"symbol", "trade_date", "adjust_factor"}, trade_date=(begin_date, end_date)).sort_values(["symbol", "trade_date"])
+            adjust_factor = adjust_factor.set_index(["symbol", "trade_date"])["adjust_factor"].reindex_axis(data.index).ffill().fillna(1)
             if adjust_mode == "post":
-                self._adjust(data, adjust)
+                self._adjust(data, adjust_factor)
             else:
-                self._adjust(data, 1/adjust)
+                self._adjust(data, 1/adjust_factor)
+            data.reset_index(inplace=True)
+            
+        return data
+        # # Catch trade_dates
+        # trade_dates = self._get_trade_cal(begin_date, end_date)
 
-        # Return in DataFrame format
-        return data.to_frame(False).sortlevel("symbol").reset_index()
+        # # Decorate data in Panel format
+        # for name, item in data.items():
+        #     item["trade_status"] = 1
+        # data = merge(data, vwap)
+        # data.rename_axis(date2int, 1, inplace=True)
+        # data["code"] = pd.DataFrame({name: fold_code(name) for name in data.minor_axis}, data.major_axis)
+        # data["freq"] = freq
+        # data = data.reindex(major_axis=trade_dates)
+        # data.fillna(0, inplace=True)
+        # data.rename_axis(fold, 2, inplace=True)
+
+        # # Adjust price
+        # if adjust_mode != "none":
+        #     adjust = self._adjust_factor(list(data.minor_axis), trade_dates)
+        #     if adjust_mode == "post":
+        #         self._adjust(data, adjust)
+        #     else:
+        #         self._adjust(data, 1/adjust)
+
+        # # Return in DataFrame format
+        # return data.to_frame(False).sortlevel("symbol").reset_index()
 
     def _adjust(self, data, adjust):
         for name in ["open", "high", "low", "close", "vwap"]:
@@ -221,3 +240,18 @@ class JsiHandler(Handler):
         data["code"] = pd.DataFrame({name: fold_code(name) for name in data.minor_axis}, data.major_axis)
         data["freq"] = freq
         return data
+
+
+if __name__ == "__main__":
+    from datautils.fxdayu import instance
+
+    import json
+    config = json.load(open(r'C:\Users\bigfish01\Documents\Python Scripts\datautils\confs\mssql-conf-guojin.json'))
+    instance.init(config)
+
+    handler = JsdHandler()
+    print(handler.receive("000001.SZ,600000.SH", 20100101, 20180131, adjust_mode="post"))
+    # handler = JsetHandler()
+    # r = handler.receive("lb.secSusp", "end_date=20180101&start_date=20170101", "")
+    # print(r)
+    # print(r.shape)
