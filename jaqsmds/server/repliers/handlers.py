@@ -1,7 +1,11 @@
 from jaqsmds.server.repliers import jsets
-from jaqsmds.server.repliers.utils import Handler, int2date, date2int
+from jaqsmds.server.repliers.utils import Handler, int2date, date2int, RangeInterpreter
 from datautils.fxdayu import instance
 import pandas as pd
+import numpy as np
+
+
+DEFAUT_IPT = RangeInterpreter("external")
 
 
 def get_reader(name):
@@ -43,7 +47,12 @@ class ViewReader(object):
     def __call__(self, filter, fields):
         filters, prj = self.interpreter(filter, fields)
         result = self.reader(fields=prj, **filters)
-        return result.sort_values(self.interpreter.sort)
+        filled = result.select_dtypes(exclude=[np.number]).fillna("")
+        result[filled.columns] = filled
+        if self.interpreter.sort:
+            return result.sort_values(self.interpreter.sort)
+        else:
+            return result
 
     def read(self, filter, fields):
         filters, prj = self.interpreter(filter, fields)
@@ -62,10 +71,6 @@ def time2int(time):
     return time.year*10000+time.month*100+time.day
 
 
-DailyIndicator = jsets.Qi("lb.secDailyIndicator", date="trade_date")
-DailyFactor = jsets.Qi("factor", date="trade_date")
-
-
 class JsetHandler(Handler):
 
     def __init__(self):
@@ -78,16 +83,15 @@ class JsetHandler(Handler):
         try:
             method = self.methods[view]
         except KeyError:
-            raise KeyError("No such view: %s" % view)
+            if view in instance.api.external:
+                method = ViewReader(DEFAUT_IPT, instance.api.external[view])
+            else:
+                raise KeyError("No such view: %s" % view)
         return method(filter, fields)
 
 
 def predefine(*args, **kwargs):
-    return instance.api.api_param(
-        fields=["api", "param", "ptype"],
-        api=["lb.secDailyIndicator", "lb.income", "lb.balanceSheet",
-             "lb.cashFlow", "lb.finIndicator", "factor", "fxdayu_factor"],
-    )
+    return instance.api.predefine()
 
 
 def unfold(symbol):
@@ -154,7 +158,10 @@ class JsdHandler(Handler):
         data = instance.api.daily(symbol, begin_date, end_date, fields).sort_values(["symbol", "trade_date"])
         if adjust_mode != "none":
             data.set_index(["symbol", "trade_date"], inplace=True)
-            adjust_factor = instance.api.sec_adj_factor(None, {"symbol", "trade_date", "adjust_factor"}, trade_date=(begin_date, end_date)).sort_values(["symbol", "trade_date"])
+            adjust_factor = instance.api.sec_adj_factor(
+                None, {"symbol", "trade_date", "adjust_factor"}, 
+                trade_date=(str(begin_date), str(end_date)), symbol=symbol
+            ).sort_values(["symbol", "trade_date"])
             adjust_factor = adjust_factor.set_index(["symbol", "trade_date"])["adjust_factor"].reindex_axis(data.index).ffill().fillna(1)
             if adjust_mode == "post":
                 self._adjust(data, adjust_factor)
@@ -240,18 +247,3 @@ class JsiHandler(Handler):
         data["code"] = pd.DataFrame({name: fold_code(name) for name in data.minor_axis}, data.major_axis)
         data["freq"] = freq
         return data
-
-
-if __name__ == "__main__":
-    from datautils.fxdayu import instance
-
-    import json
-    config = json.load(open(r'C:\Users\bigfish01\Documents\Python Scripts\datautils\confs\mssql-conf-guojin.json'))
-    instance.init(config)
-
-    handler = JsdHandler()
-    print(handler.receive("000001.SZ,600000.SH", 20100101, 20180131, adjust_mode="post"))
-    # handler = JsetHandler()
-    # r = handler.receive("lb.secSusp", "end_date=20180101&start_date=20170101", "")
-    # print(r)
-    # print(r.shape)

@@ -118,31 +118,3 @@ SYMBOL2D = [SecDividendTable, SecIndustryTable, ProfitExpressTable]
 INDEX2D = [IndexConsTable]
 SYMBOL3D = [SecAdjFactorTable, SecDailyIndicatorTable, BalanceSheetTable, IncomeTable, CashFlowTable]
 MF3D = [MFNavTable, MFPortfolioTable, MFDividendTable, MFBondPortfolioTable]
-
-
-def main():
-    from pymongo import MongoClient
-    from jaqs.data import DataApi
-    from jaqsmds.collector.structure import MFNav, MFPortfolio, MFDividend, MFBondPortfolio
-
-    client = MongoClient(port=37017)
-    indexes = index_symbols(client.jz.instrumentInfo)
-    # mf_symbol = mf_symbols(client.jz.instrumentInfo)
-
-    api = DataApi()
-    api.login("13823156147", "eyJhbGciOiJIUzI1NiJ9.eyJjcmVhdGVfdGltZSI6IjE1MTI3ODY3ODYxODMiLCJpc3MiOiJhdXRoMCIsImlkIjoiMTM4MjMxNTYxNDcifQ.Lt4orfuPoP5xVM_t3n4SdC7xwPNDoloHdvCAWU4JfYQ")
-
-    write_2d_iter(api, client, IndexConsTable, "index_code", indexes)
-    # write_2d_all(api, client, INDEX2D, index_code=",".join(indexes))
-
-    # for table in MF3D:
-    #     write_3d_all(
-    #         api,
-    #         client,
-    #         table,
-    #         "symbol",
-    #         mf_symbol
-    #     )
-
-if __name__ == '__main__':
-    main()

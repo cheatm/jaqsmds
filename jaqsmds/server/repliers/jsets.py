@@ -89,6 +89,7 @@ SecIndustry = Qi(
     defaults=['in_date', 'industry1_code', 'industry1_name', 'industry2_code',
               'industry2_name', 'industry3_code', 'industry3_name', 'industry4_code',
               'industry4_name', 'industry_src', 'out_date', 'symbol'],
+    sort=None,
     trans={"industry_src": lambda s: s.lower()}
 )
 
@@ -127,8 +128,8 @@ SecSusp = SecSuspInterpreter(
 )
 
 DailyIndicator = Qi("lb.secDailyIndicator", date="trade_date", defaults=["symbol", "trade_date"])
-DailyFactor = Qi("factor", date="datetime", default=["symbol", "trade_date"])
-FxdayuFactor = Qi("fxdayu.factor", date="datetime")
+DailyFactor = Qi("factor", date="trade_date", default=["symbol", "trade_date"])
+FxdayuFactor = Qi("fxdayu.factor", date="trade_date")
 ViewFields = Qi("jz.viewFields")
 UpdateStatus = Qi('updateStatus', date="trade_date")
 

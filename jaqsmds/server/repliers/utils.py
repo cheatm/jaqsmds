@@ -85,7 +85,7 @@ class QueryInterpreter(object):
         self.primary = primary
         self.defaults = defaults if defaults else set()
         self.trans = trans if isinstance(trans, dict) else {}
-        self.sort = sort if isinstance(sort, (list, str)) else ["symbol", "trade_date"] 
+        self.sort = sort
 
     def __call__(self, filter, fields):
         return dict(self.filter(filter)), self.fields(fields)
@@ -125,3 +125,22 @@ class QueryInterpreter(object):
             fields = set()
         fields.update(self.defaults)
         return list(fields)
+
+
+class RangeInterpreter(QueryInterpreter):
+
+    def catch(self, dct):
+        yield from super(RangeInterpreter, self).catch(dct)
+        r = {}
+        for key in list(dct):
+            if key.startswith("start_"):
+                start = dct.pop(key)
+                param = key[6:]
+                r.setdefault(param, [None, None])[0] = start
+            elif key.startswith("end_"):
+                end = dct.pop(key)
+                param = key[4:]
+                r.setdefault(param, [None, None])[1] = end
+            
+        for key, value in r.items():
+            yield key, tuple(value)

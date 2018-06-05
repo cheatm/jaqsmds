@@ -47,13 +47,18 @@ def run_worker(name):
     import os
 
     logger.init(conf.LOG_DIR, name, conf.LEVEL)
-    if os.path.isfile(conf.FILE):
-        with open(conf.FILE) as f:
-            config = json.load(f)
-            if isinstance(config, dict):
-                instance.init(config)
-            elif isinstance(config, list):
-                instance.init(config)
+    conf_files = conf.FILE.split(";")
+    configs = []
+    for file_name in conf_files:
+        if os.path.isfile(file_name):
+            with open(file_name) as f:
+                config = json.load(f)
+                if isinstance(config, dict):
+                    configs.append(config)
+                elif isinstance(config, list):
+                    configs.extend(config)
+    if len(configs) > 0:
+        instance.init(*configs)
     else:
         instance.init_mongodb_example()
 
