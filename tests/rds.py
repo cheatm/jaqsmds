@@ -11,9 +11,12 @@ async def wait_sleep():
     await wait(2)
 
 
-async def higher_wait():
-    yield
-    await 
 
-loop = asyncio.get_event_loop()
-loop.run_until_complete(wait_sleep())
+from queue import deque
+
+q = deque()
+q.append("a")
+q.appendleft("b")
+print(q.popleft())
+print(q.pop())
+print(q.pop())

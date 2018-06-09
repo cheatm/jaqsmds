@@ -43,13 +43,9 @@ class FreeReplier(RegularReplier):
 
     def put(self, client, message):
         if message.get("method", None) == ".sys.heartbeat":
-            self.output.put([client, self.methods[".sys.heartbeat"](message)])
+            return self.methods[".sys.heartbeat"](message)
         else:
             self.input.put([client, message])
     
-    def ready(self):
-        while True:
-            try:
-                yield self.output.get(timeout=0.1)
-            except Empty:
-                break
+    def get_output(self):
+        return self.output.get(timeout=0.1)

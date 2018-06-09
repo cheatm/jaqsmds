@@ -1,6 +1,7 @@
 from datetime import datetime
 from jaqs.data.dataapi.jrpc_py import _unpack_msgpack_snappy, _pack_msgpack_snappy
 from threading import Thread
+from queue import Empty
 import logging
 import zmq
 
@@ -41,17 +42,24 @@ class SimpleWorker():
             self.fetch_and_reply()
 
     def fetch_and_reply(self):
-        for client, result in self.replier.ready():
-            try:
-                reply = _pack_msgpack_snappy(result)
-                self.socket.send_multipart([client, reply])
-            except Exception as e:
-                logging.error("reply send_multipart | %s | %s", client, e)
+        try:
+            client, result = self.replier.get_output()
+        except Empty:
+            return
+        try:
+            reply = _pack_msgpack_snappy(result)
+            self.socket.send_multipart([client, reply])
+        except Exception as e:
+            logging.error("reply send_multipart | %s | %s", client, e)
 
     def reply(self, message):
         client, msg = message
         msg = _unpack_msgpack_snappy(msg)
-        self.replier.put(client, msg)
+        rpl = self.replier.put(client, msg)
+        if isinstance(rpl, dict):
+            reply = _pack_msgpack_snappy(rpl)
+            self.socket.send_multipart([client, reply])
+
         # result = self.replier.handle(msg)
         # reply = _pack_msgpack_snappy(result)
         # self.socket.send_multipart([client, reply])
