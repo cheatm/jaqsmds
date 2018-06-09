@@ -1,5 +1,6 @@
 from datetime import datetime
 from jaqs.data.dataapi.jrpc_py import _unpack_msgpack_snappy, _pack_msgpack_snappy
+from threading import Thread
 import logging
 import zmq
 
@@ -20,21 +21,40 @@ class SimpleWorker():
         self.replier = replier
 
     def run(self):
+        self.replier.start()
         while True:
             try:
-                message = self.socket.recv_multipart()
+                message = self.socket.recv_multipart(zmq.NOBLOCK)
                 if len(message) == 2:
                     self.reply(message)
+            except zmq.error.Again:
+                pass
             except Exception as e:
                 logging.error(e)
+                self.wait_and_reply()
                 break
+            finally:
+                self.fetch_and_reply()
+
+    def wait_and_reply(self):
+        while self.replier.unfinished:
+            self.fetch_and_reply()
+
+    def fetch_and_reply(self):
+        for client, result in self.replier.ready():
+            try:
+                reply = _pack_msgpack_snappy(result)
+                self.socket.send_multipart([client, reply])
+            except Exception as e:
+                logging.error("reply send_multipart | %s | %s", client, e)
 
     def reply(self, message):
         client, msg = message
         msg = _unpack_msgpack_snappy(msg)
-        result = self.replier.handle(msg)
-        reply = _pack_msgpack_snappy(result)
-        self.socket.send_multipart([client, reply])
+        self.replier.put(client, msg)
+        # result = self.replier.handle(msg)
+        # reply = _pack_msgpack_snappy(result)
+        # self.socket.send_multipart([client, reply])
 
 
 # 启动工作进程
@@ -61,5 +81,8 @@ def run_worker(name):
     worker.run()
 
 
-if __name__ == '__main__':
+def main():
     run_worker("test")
+
+if __name__ == '__main__':
+    main()
