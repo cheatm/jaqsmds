@@ -45,22 +45,3 @@ def run_client(frontend):
     socket.send_multipart([b"high"])
     result = socket.recv_multipart()
     print(result)
-
-
-if __name__ == '__main__':
-    import multiprocessing
-
-    frontend = "tcp://127.0.0.1:23000"
-    backend = "tcp://127.0.0.1:23001"
-
-    proxy = multiprocessing.Process(target=run_proxy, args=(frontend, backend))
-    worker = multiprocessing.Process(target=run_worker, args=(backend,))
-    client = multiprocessing.Process(target=run_client, args=(frontend,))
-
-    proxy.start()
-    worker.start()
-    client.start()
-
-    client.join()
-    worker.join()
-    proxy.join()
