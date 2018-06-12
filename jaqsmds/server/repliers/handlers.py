@@ -141,59 +141,27 @@ class JsdHandler(Handler):
         else:
             fields = self.default_fields
 
-        # fields = set(fields.split(",")) if len(fields) else set()
-
-        # if (len(fields) == 0):
-        #     vwap = True
-        #     fields = None
-        # elif "vwap" in fields:
-        #     fields.add("volume")
-        #     fields.add("turnover")
-        #     fields.remove("vwap")
-        #     vwap = True
-        # else:
-        #     vwap = False
-
         # Read original data
-        data = instance.api.daily(symbol, begin_date, end_date, fields).sort_values(["symbol", "trade_date"])
+        data = instance.api.daily(symbol, begin_date, end_date, fields).sort_values(["symbol", "trade_date"]).set_index(["symbol", "trade_date"])
         if adjust_mode != "none":
-            data.set_index(["symbol", "trade_date"], inplace=True)
             adjust_factor = instance.api.sec_adj_factor(
                 None, {"symbol", "trade_date", "adjust_factor"}, 
-                trade_date=(str(begin_date), str(end_date)), symbol=symbol
+                trade_date=(begin_date, end_date), symbol=symbol
             ).sort_values(["symbol", "trade_date"])
             adjust_factor = adjust_factor.set_index(["symbol", "trade_date"])["adjust_factor"].reindex_axis(data.index).ffill().fillna(1)
             if adjust_mode == "post":
                 self._adjust(data, adjust_factor)
             else:
                 self._adjust(data, 1/adjust_factor)
-            data.reset_index(inplace=True)
             
-        return data
-        # # Catch trade_dates
-        # trade_dates = self._get_trade_cal(begin_date, end_date)
-
-        # # Decorate data in Panel format
-        # for name, item in data.items():
-        #     item["trade_status"] = 1
-        # data = merge(data, vwap)
-        # data.rename_axis(date2int, 1, inplace=True)
-        # data["code"] = pd.DataFrame({name: fold_code(name) for name in data.minor_axis}, data.major_axis)
-        # data["freq"] = freq
-        # data = data.reindex(major_axis=trade_dates)
-        # data.fillna(0, inplace=True)
-        # data.rename_axis(fold, 2, inplace=True)
-
-        # # Adjust price
-        # if adjust_mode != "none":
-        #     adjust = self._adjust_factor(list(data.minor_axis), trade_dates)
-        #     if adjust_mode == "post":
-        #         self._adjust(data, adjust)
-        #     else:
-        #         self._adjust(data, 1/adjust)
-
-        # # Return in DataFrame format
-        # return data.to_frame(False).sortlevel("symbol").reset_index()
+        # Catch trade_dates
+        trade_dates = list(self._get_trade_cal(begin_date, end_date))
+        index = pd.MultiIndex.from_product([symbol, trade_dates], names=("symbol", "trade_date"))
+        result = data.reindex(index)
+        for name in ["volume", "turnover", "trade_status"]:
+            if name in result.columns:
+                result[name].fillna(0, inplace=True)
+        return result.reset_index()
 
     def _adjust(self, data, adjust):
         for name in ["open", "high", "low", "close", "vwap"]:
