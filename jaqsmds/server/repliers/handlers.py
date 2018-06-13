@@ -130,7 +130,7 @@ class JsdHandler(Handler):
     composory_fields = {"trade_date", "symbol"}
 
     def __init__(self):
-        self.trade_cal = instance.api.trade_cal(fields="trade_date").set_index("trade_date").index.sort_values()
+        self.trade_cal = instance.api.trade_cal(fields="trade_date").set_index("trade_date").index.map(int).sort_values()
 
     def receive(self, symbol, begin_date, end_date, fields="", adjust_mode="none", freq="1d", **kwargs):
         # Modify inputs
@@ -148,7 +148,7 @@ class JsdHandler(Handler):
                 None, {"symbol", "trade_date", "adjust_factor"}, 
                 trade_date=(begin_date, end_date), symbol=symbol
             ).sort_values(["symbol", "trade_date"])
-            adjust_factor = adjust_factor.set_index(["symbol", "trade_date"])["adjust_factor"].reindex_axis(data.index).ffill().fillna(1)
+            adjust_factor = adjust_factor.set_index(["symbol", "trade_date"])["adjust_factor"].reindex_axis(data.index).fillna(1)
             if adjust_mode == "post":
                 self._adjust(data, adjust_factor)
             else:
