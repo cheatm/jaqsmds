@@ -5,7 +5,7 @@ import pandas as pd
 import numpy as np
 
 
-DEFAUT_IPT = RangeInterpreter("external")
+DEFAUT_IPT = RangeInterpreter("external", defaults={"symbol", "trade_date"}, date="trade_date")
 
 
 def get_reader(name):
