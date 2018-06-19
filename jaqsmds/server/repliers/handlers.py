@@ -9,7 +9,8 @@ DEFAUT_IPT = RangeInterpreter("external", defaults={"symbol", "trade_date"}, dat
 
 
 def get_reader(name):
-    return instance.api.__getattribute__(VIEW_KEY_MAP[name].lower())
+    # return instance.api.__getattribute__(VIEW_KEY_MAP[name].lower())
+    return instance.api[name]
 
 
 VIEW_KEY_MAP = {'help.apiList': 'API_LIST',
@@ -84,7 +85,7 @@ class JsetHandler(Handler):
             method = self.methods[view]
         except KeyError:
             if view in instance.api.external:
-                method = ViewReader(DEFAUT_IPT, instance.api.external[view])
+                method = ViewReader(DEFAUT_IPT, instance.api[view])
             else:
                 raise KeyError("No such view: %s" % view)
         return method(filter, fields)
