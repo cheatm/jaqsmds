@@ -84,7 +84,7 @@ class JsetHandler(Handler):
         try:
             method = self.methods[view]
         except KeyError:
-            if view in instance.api.external:
+            if view in instance.api.methods:
                 method = ViewReader(DEFAUT_IPT, instance.api[view])
             else:
                 raise KeyError("No such view: %s" % view)

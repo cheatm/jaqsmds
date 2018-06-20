@@ -2,6 +2,7 @@ from jaqsmds.server.repliers.basic import RegularReplier
 from jaqsmds.server.repliers.handlers import JsetHandler, JsdHandler, JsiHandler
 from queue import Queue, Empty
 from threading import Thread
+import logging
 
 
 class FreeReplier(RegularReplier):
@@ -46,6 +47,7 @@ class FreeReplier(RegularReplier):
             return self.methods[".sys.heartbeat"](message)
         else:
             self.input.put([client, message])
+            logging.debug("queue size | %s", self.input.qsize())
     
     def get_output(self):
         return self.output.get(timeout=0.1)
