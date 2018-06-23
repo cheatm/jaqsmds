@@ -50,4 +50,4 @@ class FreeReplier(RegularReplier):
             logging.debug("queue size | %s", self.input.qsize())
     
     def get_output(self):
-        return self.output.get(timeout=0.1)
+        return self.output.get(timeout=0.01)
