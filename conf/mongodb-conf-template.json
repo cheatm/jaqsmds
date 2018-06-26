@@ -1,0 +1,36 @@
+{
+    "type": "mongodb",
+    "MONGODB_URI": "localhost",
+    "UPDATE": {
+        "factor": "log.factor",
+        "candle": "log.sinta",
+        "daily_indicator": "log.dailyIndicator"
+    },
+    "DB_MAP": {
+        "factor": "factors",
+        "fxdayu.factor": "fxdayu_factors",
+        "lb.secDailyIndicator": "SecDailyIndicator",
+        "bar": "Stock_1M",
+        "daily": "Stock_D"
+    },
+    "COL_MAP": {
+        "help.apiList": "jz.apiList",
+        "help.apiParam": "jz.apiParam",
+        "jz.instrumentInfo": "jz.instrumentInfo",
+        "jz.secTradeCal": "jz.secTradeCal",
+        "lb.balanceSheet": "lb.balanceSheet",
+        "lb.cashFlow": "lb.cashFlow",
+        "lb.finIndicator": "lb.finIndicator",
+        "lb.income": "lb.income",
+        "lb.indexCons": "lb.indexCons",
+        "lb.indexWeightRange": "lb.indexWeightRange",
+        "lb.profitExpress": "lb.profitExpress",
+        "lb.sState": "lb.sState",
+        "lb.secDividend": "lb.secDividend",
+        "lb.secIndustry": "lb.secIndustry",
+        "lb.secSusp": "lb.secSusp",
+        "lb.secRestricted": "lb.secRestricted",
+        "lb.windFinance": "lb.windFinance",
+        "lb.secAdjFactor": "lb.secAdjFactor"
+    },
+}
