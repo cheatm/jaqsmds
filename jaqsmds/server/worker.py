@@ -83,14 +83,7 @@ def run_worker(name):
     if len(configs) > 0:
         instance.init(*configs)
     else:
-        instance.init_mongodb_example()
+        logging.error("No config")
 
     worker = SimpleWorker(conf.BACKEND, FreeReplier())
     worker.run()
-
-
-def main():
-    run_worker("test")
-
-if __name__ == '__main__':
-    main()
