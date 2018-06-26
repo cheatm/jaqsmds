@@ -60,11 +60,6 @@ class SimpleWorker():
             reply = _pack_msgpack_snappy(rpl)
             self.socket.send_multipart([client, reply])
 
-        # result = self.replier.handle(msg)
-        # reply = _pack_msgpack_snappy(result)
-        # self.socket.send_multipart([client, reply])
-
-
 # 启动工作进程
 def run_worker(name):
     from datautils.fxdayu import instance

@@ -148,7 +148,9 @@ class JsdHandler(Handler):
             adjust_factor = instance.api.sec_adj_factor(
                 None, {"symbol", "trade_date", "adjust_factor"}, 
                 trade_date=(begin_date, end_date), symbol=symbol
-            ).sort_values(["symbol", "trade_date"])
+            ).reindex_axis(["symbol", "trade_date", "adjust_factor"], 1).sort_values(["symbol", "trade_date"])
+            
+            adjust_factor["trade_date"] = adjust_factor["trade_date"].apply(int)
             adjust_factor = adjust_factor.set_index(["symbol", "trade_date"])["adjust_factor"].reindex_axis(data.index).fillna(1)
             if adjust_mode == "post":
                 self._adjust(data, adjust_factor)
@@ -185,6 +187,8 @@ class JsdHandler(Handler):
 
 class JsiHandler(Handler):
 
+    default_fields = {"close"}
+
     def receive(self, symbol, begin_time, end_time, trade_date=0, freq="1M", fields="", **kwargs):
         symbol = list(map(unfold, symbol.split(",")))
         if fields == "":
@@ -197,22 +201,13 @@ class JsiHandler(Handler):
             vwap = True
         else:
             vwap = False
+        fields.update(self.default_fields)
         trade_date = int2date(trade_date)
-
-        panel = self.read(symbol, begin_time, end_time, trade_date, freq, fields, vwap).rename_axis(fold, 2)
-        result = panel.rename_axis(fold).to_frame(False).sortlevel("symbol").reset_index(level="symbol")
-        result["code"] = result["symbol"].apply(lambda s: s[:6])
-        result["trade_date"] = result["date"]
-        return result
-
-    def read(self, symbol, begin_time, end_time, trade_date, freq, fields, vwap=False):
         data = instance.api.bar(symbol, trade_date, fields)
-        data = merge(data, vwap)
-        dates = list(map(lambda t: t.year*10000+t.month*100+t.day, data.major_axis))
-        dates = pd.DataFrame({name: dates for name in data.minor_axis}, data.major_axis)
-        data["date"] = dates
-        times = list(map(lambda t: t.hour*10000+t.minute*100+t.second, data.major_axis))
-        data["time"] = pd.DataFrame({name: times for name in data.minor_axis}, data.major_axis)
-        data["code"] = pd.DataFrame({name: fold_code(name) for name in data.minor_axis}, data.major_axis)
         data["freq"] = freq
+        print(data)
+        if vwap:
+            data["vwap"] = data["turnover"] / data["volume"].replace(0, np.NaN)
+            null = data["vwap"].isnull()
+            data["vwap"][null] = data["close"][null]
         return data
