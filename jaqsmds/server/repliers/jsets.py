@@ -134,35 +134,8 @@ ViewFields = Qi("jz.viewFields")
 UpdateStatus = Qi('updateStatus', date="trade_date")
 
 
-LB = [SecDividend, SecIndustry, SecAdjFactor, BalanceSheet, Income, CashFlow, SState, SecSusp,
-      ProfitExpress, SecRestricted, IndexCons, IndexWeightRange, FinIndicator, WindFinance, DailyIndicator]
-
-JZ = [InstrumentInfo, SecTradeCal, ApiList, ApiParam]
-
-OTHER = [DailyFactor, FxdayuFactor]
-
-
-API_JSET_MAP = {
-    "api_list": ApiList,
-    "api_param": ApiParam,
-    "inst_info": InstrumentInfo,
-    "trade_cal": SecTradeCal,
-    "balance_sheet": BalanceSheet,
-    "cash_flow": CashFlow,
-    "fin_indicator": FinIndicator,
-    "income": Income,
-    "index_cons": IndexCons,
-    "index_weight_range": IndexWeightRange,
-    "profit_express": ProfitExpress,
-    "s_state": SState,
-    "sec_dividend": SecDividend,
-    "sec_industry": SecIndustry,
-    "sec_restricted": SecRestricted,
-    "sec_susp": SecSusp,
-    "wind_finance": WindFinance,
-    "factor": DailyFactor,
-    "fxdayu_factor": FxdayuFactor,
-    "daily_indicator": SecDailyIndicator,
-    "sec_adj_factor": SecAdjFactor,
-    "update_status": UpdateStatus
-}
+API_JSETS = [
+    ApiList, ApiParam, InstrumentInfo, SecTradeCal, BalanceSheet, CashFlow, FinIndicator, Income,
+    IndexCons, IndexWeightRange, ProfitExpress, SState, SecDividend, SecIndustry, SecRestricted, SecSusp,
+    WindFinance, DailyFactor, FxdayuFactor, SecDailyIndicator, SecAdjFactor, UpdateStatus
+]

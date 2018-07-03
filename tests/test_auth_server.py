@@ -42,3 +42,10 @@ class TestAuthServer(unittest.TestCase):
         data, msg = self.api.query(**self.query)
         self.assertTrue(data is None)
         self.assertTrue("-1,Fields out of restrict" in msg)
+
+
+def main():
+    unittest.main()
+
+if __name__ == '__main__':
+    main()

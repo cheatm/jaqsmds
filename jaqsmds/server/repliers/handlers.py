@@ -1,6 +1,7 @@
 from jaqsmds.server.repliers import jsets
 from jaqsmds.server.repliers.utils import Handler, int2date, date2int, RangeInterpreter
 from datautils.fxdayu import instance
+import logging
 import pandas as pd
 import numpy as np
 
@@ -11,32 +12,6 @@ DEFAUT_IPT = RangeInterpreter("external", defaults={"symbol", "trade_date"}, dat
 def get_reader(name):
     # return instance.api.__getattribute__(VIEW_KEY_MAP[name].lower())
     return instance.api[name]
-
-
-VIEW_KEY_MAP = {'help.apiList': 'API_LIST',
-                'help.apiParam': 'API_PARAM',
-                'jz.instrumentInfo': 'INST_INFO',
-                'jz.secTradeCal': 'TRADE_CAL',
-                'lb.balanceSheet': 'BALANCE_SHEET',
-                'lb.cashFlow': 'CASH_FLOW',
-                'lb.finIndicator': 'FIN_INDICATOR',
-                'lb.income': 'INCOME',
-                'lb.indexCons': 'INDEX_CONS',
-                'lb.indexWeightRange': 'INDEX_WEIGHT_RANGE',
-                'lb.profitExpress': 'PROFIT_EXPRESS',
-                'lb.sState': 'S_STATE',
-                'lb.secDividend': 'SEC_DIVIDEND',
-                'lb.secIndustry': 'SEC_INDUSTRY',
-                'lb.secRestricted': 'SEC_RESTRICTED',
-                'lb.secSusp': 'SEC_SUSP',
-                'lb.windFinance': 'WIND_FINANCE',
-                'JSI': 'STOCK_1M',
-                'JSD': 'STOCK_D',
-                'factor': 'FACTOR',
-                "fxdayu.factor": "fxdayu_factor",
-                'lb.secDailyIndicator': 'DAILY_INDICATOR',
-                'lb.secAdjFactor': "SEC_ADJ_FACTOR",
-                'updateStatus': "UPDATE_STATUS"}
 
 
 class ViewReader(object):
@@ -76,9 +51,15 @@ class JsetHandler(Handler):
 
     def __init__(self):
         self.methods = {}
-        for name, interpreter in jsets.API_JSET_MAP.items():
-            self.methods[interpreter.view] = ViewReader(interpreter, instance.api.__getattribute__(name))
-        self.methods["help.predefine"] = predefine
+        for interpreter in jsets.API_JSETS:
+            try:
+                reader = instance.api[interpreter.view]
+            except  KeyError:
+                logging.error("Default api: %s | Reader not loaded", interpreter.view)
+                continue
+            else:
+                self.methods[interpreter.view] = ViewReader(interpreter, reader)
+        self.methods["help.predefine"] = instance.api.predefine
 
     def receive(self, view, filter, fields, **kwargs):
         try:
@@ -89,10 +70,6 @@ class JsetHandler(Handler):
             else:
                 raise KeyError("No such view: %s" % view)
         return method(filter, fields)
-
-
-def predefine(*args, **kwargs):
-    return instance.api.predefine()
 
 
 def unfold(symbol):
